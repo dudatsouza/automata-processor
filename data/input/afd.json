@@ -1,0 +1,13 @@
+{
+  "nome": "AFD Exemplo",
+  "alfabeto": ["0", "1"],
+  "estados": ["q0", "q1"],
+  "estados_finais": ["q1"],
+  "estado_inicial": "q0",
+  "transicoes": [
+    {"origem": "q0", "destino": "q1", "simbolo": "1"},
+    {"origem": "q0", "destino": "q0", "simbolo": "0"},
+    {"origem": "q1", "destino": "q1", "simbolo": "1"},
+    {"origem": "q1", "destino": "q0", "simbolo": "0"}
+  ]
+}

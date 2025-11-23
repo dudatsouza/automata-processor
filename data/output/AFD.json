@@ -1,0 +1,11 @@
+{ "nome" : "Automato_AFD", 
+"alfabeto" : ["a", "b"], 
+"estados" : ["q0", "q0_q1", "q0_q2"], 
+"estados_finais" : ["q0_q2"], "estado_inicial" : ["q0"], 
+"transicoes" : [
+    { "origem" : "q0", "destino" : "q0_q1", "simbolo" : "a" }, 
+    { "origem" : "q0", "destino" : "q0", "simbolo" : "b" }, 
+    { "origem" : "q0_q1", "destino" : "q0_q1", "simbolo" : "a" }, 
+    { "origem" : "q0_q1", "destino" : "q0_q2", "simbolo" : "b" }, 
+    { "origem" : "q0_q2", "destino" : "q0_q1", "simbolo" : "a" }, 
+    { "origem" : "q0_q2", "destino" : "q0", "simbolo" : "b" }] }

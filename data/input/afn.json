@@ -1,0 +1,12 @@
+{
+  "nome": "AFN Exemplo",
+  "alfabeto": ["a", "b"],
+  "estados": ["q0", "q1", "q2"],
+  "estados_finais": ["q2"],
+  "estado_inicial": "q0",
+  "transicoes": [
+    {"origem": "q0", "destino": "q0", "simbolo": "a"},
+    {"origem": "q0", "destino": "q1", "simbolo": "a"},
+    {"origem": "q1", "destino": "q2", "simbolo": "b"}
+  ]
+}

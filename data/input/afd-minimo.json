@@ -1,0 +1,13 @@
+{
+  "nome": "AFD Minimizado",
+  "alfabeto": ["0", "1"],
+  "estados": ["A", "B"],
+  "estados_finais": ["B"],
+  "estado_inicial": "A",
+  "transicoes": [
+    {"origem": "A", "destino": "A", "simbolo": "0"},
+    {"origem": "A", "destino": "B", "simbolo": "1"},
+    {"origem": "B", "destino": "A", "simbolo": "0"},
+    {"origem": "B", "destino": "B", "simbolo": "1"}
+  ]
+}
