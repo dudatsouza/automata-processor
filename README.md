@@ -1,6 +1,6 @@
 # Simulador e Conversor de Autômatos — LFA
 
-Este projeto implementa um sistema completo para **manipulação, conversão e simulação de autômatos finitos**, desenvolvido como trabalho da disciplina de **Linguagens Formais e Autômatos (LFA)** do CEFET-MG.  
+Este projeto implementa um sistema completo para **manipulação, conversão e simulação de autômatos**, desenvolvido como trabalho da disciplina de **Linguagens Formais e Autômatos (LFA)** do CEFET-MG.  
 O software realiza conversões entre diferentes tipos de autômatos (AFN, AFN-ε, AFD, AFD minimizado, multi-inicial) e permite testar palavras seguindo as regras formais de cada modelo.
 
 ---
@@ -10,10 +10,8 @@ O software realiza conversões entre diferentes tipos de autômatos (AFN, AFN-ε
 - 🔹 **Conversão AFN → AFD** (Método do Subconjunto)  
 - 🔹 **Conversão AFN-ε → AFN** (remoção sistemática de ε-transições)  
 - 🔹 **Conversão para AFD Multi-Inicial**  
-- 🔹 **Minimização de AFD** usando particionamento  
-- 🔹 **Simulação de palavras** em qualquer autômato  
-- 🔹 **Leitura e escrita em JSON**  
-- 🔹 Compatível com **Linux** e **Windows**
+- 🔹 **Minimização de AFD** (usando particionamento)  
+- 🔹 **Simulação de palavras** (em qualquer autômato) 
 
 ---
 
@@ -162,7 +160,7 @@ Trabalho desenvolvido em dupla pelos seguintes alunos:
 ---
 
 [gmail-badge]: https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white
-[gmail-duda]: mailto:duda@example.com
+[gmail-duda]: mailto:dudateixeirasouza@gmail.com
 [gmail-joao]: mailto:joaoteles0505@gmail.com
 
 [telegram-autor3]: https://t.me/dudat_18
