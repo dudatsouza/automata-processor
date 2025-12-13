@@ -125,7 +125,7 @@ begin
         readln(option);
 
         if option = 1 then
-            path := './data/input/automato.json'
+            path := './data/input/afd_para_minimizar.json'
         else if option = 2 then
         begin
             write('Informe o nome do arquivo JSON: ');
