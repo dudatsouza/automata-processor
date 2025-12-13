@@ -1,16 +1,38 @@
-Write-Host "Compilando projeto..."
+Write-Host "Iniciando build limpo..."
 
-$SRC = "src"
+$SRC  = "src"
 $MAIN = "src/main/main.pas"
-$BIN = "bin"
+$BIN  = "bin"
+$EXE  = "$BIN/automata.exe"
 
-if (!(Test-Path $BIN)) {
-    New-Item -ItemType Directory -Path $BIN | Out-Null
+function Clean {
+    Write-Host "Limpando arquivos de compilação..."
+
+    if (Test-Path $BIN) {
+        Remove-Item -Recurse -Force $BIN
+    }
+
+    Get-ChildItem -Recurse -Include *.o, *.ppu -ErrorAction SilentlyContinue |
+        Remove-Item -Force
+
+    Write-Host "Limpeza concluída."
 }
 
-$EXE = "$BIN/automata.exe"
+# Clean explícito
+if ($args.Length -gt 0 -and $args[0] -eq "clean") {
+    Clean
+    exit 0
+}
 
-$CMD = "fpc -Fusrc -Fusrc/core -Fusrc/conversions -Fusrc/tests `"$MAIN`" -o`"$EXE`""
+# Clean automático antes do build
+Clean
+
+Write-Host "Compilando projeto..."
+
+# Recria pasta bin
+New-Item -ItemType Directory -Path $BIN -Force | Out-Null
+
+$CMD = "fpc -Fusrc -Fusrc/core -Fusrc/conversions `"$MAIN`" -o`"$EXE`""
 
 Write-Host "Executando: $CMD"
 Invoke-Expression $CMD

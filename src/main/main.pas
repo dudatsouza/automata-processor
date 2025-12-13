@@ -2,7 +2,8 @@ program Main;
 
 uses
     io, automaton, afne_conversion, afne_afn_conversion, afn_afd_conversion,
-    afd_minimization, words_test, utils;
+    afd_minimization, words_test, utils,
+    Crt;
 
 var
     AutomatonObj: TAutomaton;
@@ -113,6 +114,8 @@ begin
 end;
 
 begin
+    ClrScr;   // limpa o terminal (Windows, macOS, Linux)
+
     exitProgram := false;
 
     repeat
