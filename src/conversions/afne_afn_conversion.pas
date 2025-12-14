@@ -3,7 +3,7 @@ unit afne_afn_conversion;
 interface
 
 uses
-  automaton, io, sysutils, utils;
+  sysutils, automaton, utils, io;
 
 procedure ConvertAFNEToAFN(var A: TAutomaton);
 
@@ -234,9 +234,33 @@ begin
   // 4.3 Reclassificar
   ClassifyAutomaton(A);
 
-  writeln('>> Conversao AFN-E para AFN executada com sucesso!');
-  
-  SaveAutomatonJSON('./data/output/AFN_converted.json', A);
+  if (A.classification = 'AFN') or (A.classification = 'AFD') or (A.classification = 'AFD-MINIMO') then
+  begin
+    writeln('>> Conversao AFN-E para AFN executada com sucesso!');
+    
+    // Verifica classificações mais específicas e salva com o nome apropriado
+    if A.classification = 'AFD-MINIMO' then
+    begin
+      writeln('   (Nota: O classificador identificou que o automato resultante ja eh AFD MINIMO!)');
+      SaveAutomatonJSON('./data/output/AFN_E_para_AFD_MINIMO.json', A);
+    end
+    else if A.classification = 'AFD' then
+    begin
+      writeln('   (Nota: O classificador identificou que o automato resultante ja eh AFD.)');
+      SaveAutomatonJSON('./data/output/AFN_E_para_AFD.json', A);
+    end
+    else
+    begin
+      // Caso padrão: AFN
+      SaveAutomatonJSON('./data/output/AFN_converted.json', A);
+    end;
+    
+  end 
+  else
+  begin
+    writeln('!! [ERRO DE CLASSIFICACAO]: Conversao falhou ou foi classificada incorretamente como ', A.classification, '!!');
+  end;
+
 end;
 
 end.

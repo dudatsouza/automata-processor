@@ -1,5 +1,5 @@
 {
-  "nome" : "Automato_AFD-MINIMO",
+  "nome" : "Automato_AFD",
 
   "alfabeto" : ["a", "b"],
   "estados" : ["q3", "q1", "q2", "q0", "ERRO"],

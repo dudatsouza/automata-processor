@@ -3,7 +3,7 @@ unit afn_afd_conversion;
 interface
 
 uses
-  automaton, io, utils;
+  sysutils, automaton, utils, io;
 
 procedure ConvertAFNToAFD(var A: TAutomaton);
 
@@ -294,8 +294,26 @@ begin
   // Reclassificar
   ClassifyAutomaton(A);
 
-  writeln('>> Conversao AFN -> AFD concluida com sucesso!');
-  SaveAutomatonJSON('./data/output/AFD.json', A);
+  if (A.classification = 'AFD') or (A.classification = 'AFD-MINIMO') then
+  begin
+    writeln('>> Conversao AFN para AFD executada com sucesso!');
+    
+    if A.classification = 'AFD-MINIMO' then
+    begin
+      writeln('   (Nota: O classificador identificou que o AFD resultante ja eh MINIMO!)');
+      SaveAutomatonJSON('./data/output/AFD_MINIMO_CONVERTIDO.json', A)
+    end
+    else 
+    begin
+      SaveAutomatonJSON('./data/output/AFD.json', A);
+    end;
+
+  end
+  else
+  begin
+    writeln('!! [ERRO DE CLASSIFICACAO]: Conversao falhou ou foi classificada incorretamente como ', A.classification, '!!');
+  end;
+
 end;
 
 end.

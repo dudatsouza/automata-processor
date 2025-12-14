@@ -3,7 +3,7 @@ unit afne_conversion;
 interface
 
 uses
-  automaton, utils, sysutils, io;
+  sysutils, automaton, utils, io;
 
 procedure ConvertMultiInitialToAFNE(var A: TAutomaton);
 
@@ -139,10 +139,18 @@ begin
   A.countInitial := 1;
 
   // 6. Reclassificar
-  ClassifyAutomaton(A); 
+  ClassifyAutomaton(A);
 
-  writeln('>> Conversao Multi-Inicial para AFN-E executada com sucesso!');
-  SaveAutomatonJSON('./data/output/AFN_multiinicial_conertido.json', A);
+  if A.classification = 'AFN-E' then
+  begin
+    writeln('>> Conversao Multi-Inicial para AFN-E executada com sucesso!');
+    SaveAutomatonJSON('./data/output/AFN_multiinicial_conertido.json', A);
+  end
+  else
+  begin
+    writeln('!! [ERRO DE CLASSIFICACAO]: Conversao falhou ou foi classificada incorretamente como ', A.classification, '!!');
+  end;
+
 end;
 
 end.

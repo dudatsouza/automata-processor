@@ -3,7 +3,7 @@ unit afd_minimization;
 interface
 
 uses
-  automaton, io, utils;
+  sysutils, automaton, utils, io;
 
 procedure MinimizeAFD(var A: TAutomaton);
 
@@ -215,6 +215,12 @@ var
 begin
   // 0. Verificações
   ClassifyAutomaton(A);
+  if A.classification = 'AFD-MINIMO' then
+  begin
+    writeln('>> O automato ja esta classificado como AFD-MINIMO. Operacao cancelada.');
+    Exit;
+  end;
+
   if A.classification <> 'AFD' then
   begin
     writeln('Erro: o automato precisa ser AFD antes da minimizacao');
@@ -388,10 +394,18 @@ begin
 
   // 4.5 Substituição final
   A := newA;
-  A.classification := 'AFD-MINIMO';
-  
-  SaveAutomatonJSON('./data/output/AFD_MINIMO.json', A);
-  writeln('>> Minimizacao concluida!');
+  ClassifyAutomaton(A);
+
+  if A.classification = 'AFN' then
+  begin
+    writeln('>> Minimização de AFD executada com sucesso!');
+    SaveAutomatonJSON('./data/output/AFD_MINIMO.json', A);
+  end
+  else
+  begin
+    writeln('!! [ERRO DE CLASSIFICACAO]: Conversao falhou ou foi classificada incorretamente como ', A.classification, '!!');
+  end;
+
 end;
 
 end.

@@ -3,7 +3,7 @@ unit words_test;
 interface
 
 uses
-  automaton; 
+  automaton, utils; 
 
 procedure TestWords(var A: TAutomaton);
 
@@ -48,6 +48,7 @@ var
   
   i, j, t: Integer;
   ch: String; // String, pois o símbolo no autômato é String
+  alphabetString: String;
 begin
   reason := '';
 
@@ -78,6 +79,30 @@ begin
   for i := 1 to Length(word) do
   begin
     ch := word[i]; // Converte char para string automaticamente
+
+    if not ContainsString(A.alphabet, A.countAlphabet, ch) then
+    begin
+      // --- CONSTRUÇÃO DA MENSAGEM DE ERRO DETALHADA ---
+      // Usa 'j' (já declarado) e 'alphabetString' (movido para o VAR principal)
+      begin
+        alphabetString := '';
+        
+        // Constrói a lista de símbolos do alfabeto: {a, b, c}
+        for j := 0 to A.countAlphabet - 1 do
+        begin
+          if j > 0 then 
+            alphabetString := alphabetString + ', ';
+          alphabetString := alphabetString + A.alphabet[j];
+        end;
+        
+        reason := 'Simbolo "' + ch + '" nao pertence ao alfabeto do automato. O alfabeto aceito eh composto por {' + alphabetString + '}';
+      end;
+      // --------------------------------------------------
+      
+      IsWordAccepted := False;
+      Exit;
+    end;
+
     countNext := 0; // Limpa o buffer de próximos estados
 
     // Para cada estado atual (simula não-determinismo)
@@ -138,48 +163,14 @@ var
   word: String;
   accepted: Boolean;
   reason: String;
-  i: Integer;
 begin
   writeln;
-  writeln('========== TESTADOR DE PALAVRAS ==========');
+  writeln('----- TESTADOR DE PALAVRAS -----');
 
-  write('Alfabeto: { ');
-  for i := 0 to A.countAlphabet - 1 do
-  begin
-    if i > 0 then write(', ');
-    write(A.alphabet[i]);
-  end;
-  writeln(' }');
-
-  write('Estados: { ');
-  for i := 0 to A.countStates - 1 do
-  begin
-    if i > 0 then write(', ');
-    write(A.states[i]);
-  end;
-  writeln(' }');
-
-  write('Estado(s) Inicial(is): { ');
-  for i := 0 to A.countInitial - 1 do
-  begin
-    if i > 0 then write(', ');
-    write(A.initialState[i]);
-  end;
-  writeln(' }');
-
-  write('Estado(s) Final(is): { ');
-  for i := 0 to A.countFinal - 1 do
-  begin
-    if i > 0 then write(', ');
-    write(A.finalStates[i]);
-  end;
-  writeln(' }');
-
-  writeln('Transicoes (Total: ', A.countTransitions, '):');
-  for i := 0 to A.countTransitions - 1 do
-    writeln('  ', A.transitions[i].source, ' --[', A.transitions[i].symbol, ']--> ', A.transitions[i].target);
+  ShowAutomatonDetails(A);
 
   writeln;
+  writeln('----- TESTE UMA PALAVRA -----');
   writeln('Digite "sair" para retornar ao menu.');
 
   while True do
