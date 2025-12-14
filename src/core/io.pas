@@ -1,19 +1,17 @@
 unit io;
 
-{$mode objfpc}{$H+} // Modo ObjFPC para arrays dinâmicos e Strings Longas (AnsiString)
+{$mode objfpc}{$H+} 
 
 interface
 
-uses
+uses // aqui podemos usar coisas do pascal moderno, pois nao afeta em nada na logica do trabalho, apenas como trata a entrada e saida
   SysUtils, Classes, fpjson, jsonparser, automaton;
 
 type
-  // Estrutura temporária para leitura do JSON (Dinâmica)
   TAutomatonData = record
     Name: string;
     States: array of string;
     Alphabet: array of string;
-    // InitialState agora é ARRAY OF STRING para suportar ["q0"] ou ["q0", "q1"]
     InitialState: array of string; 
     FinalStates: array of string;
     Transitions: TJSONArray;
@@ -21,11 +19,11 @@ type
 
 function ReadJSON(const FilePath: string): TAutomatonData;
 function ConvertTAutomatonData(const Data: TAutomatonData): TAutomaton;
-procedure WriteResult(const FilePath: string; const Text: string);
 procedure SaveAutomatonJSON(const FilePath: string; const A: TAutomaton);
 
 implementation
 
+// Leitura do JSON
 function ReadJSON(const FilePath: string): TAutomatonData;
 var
   InputFile: TStringList;
@@ -48,7 +46,7 @@ begin
 
     Result.Name := Obj.Get('nome', '');
 
-    // --- Leitura Robusta de Estado Inicial (String ou Array) ---
+    // Leitura de Estado Inicial 
     InitStatesJSON := Obj.Find('estado_inicial');
     if InitStatesJSON <> nil then
     begin
@@ -73,9 +71,8 @@ begin
     begin
       SetLength(Result.InitialState, 0);
     end;
-    // -----------------------------------------------------------
 
-    // Ler Estados
+    // Leitura dos Estados
     if Obj.Find('estados') <> nil then
     with Obj.Arrays['estados'] do
     begin
@@ -84,7 +81,7 @@ begin
         Result.States[i] := Strings[i];
     end;
 
-    // Ler Alfabeto
+    // Leitura do Alfabeto
     if Obj.Find('alfabeto') <> nil then
     with Obj.Arrays['alfabeto'] do
     begin
@@ -93,7 +90,7 @@ begin
         Result.Alphabet[i] := Strings[i];
     end;
 
-    // Ler Estados Finais
+    // Leitura dos Estados Finais
     if Obj.Find('estados_finais') <> nil then
     with Obj.Arrays['estados_finais'] do
     begin
@@ -106,7 +103,7 @@ begin
     if Obj.Find('transicoes') <> nil then
       Result.Transitions := Obj.Arrays['transicoes'].Clone as TJSONArray
     else
-      Result.Transitions := TJSONArray.Create; // Vazio se não existir
+      Result.Transitions := TJSONArray.Create; 
 
   finally
     InputFile.Free;
@@ -114,12 +111,12 @@ begin
   end;
 end;
 
+// Passa para TAutomaton para conseguir executar as conversões e outras funções
 function ConvertTAutomatonData(const Data: TAutomatonData): TAutomaton;
 var
   i: Integer;
   Obj: TJSONObject;
 begin
-  // Inicializa os contadores manuais do formato estático
   Result.countStates := 0;
   Result.countAlphabet := 0;
   Result.countFinal := 0;
@@ -127,7 +124,7 @@ begin
   Result.countTransitions := 0;
   Result.classification := '';
 
-  // 1. Converter Estados
+  // Conversão dos Estados
   for i := 0 to Length(Data.States) - 1 do
   begin
     if Result.countStates >= MAX_STATES then Break;
@@ -135,7 +132,7 @@ begin
     Inc(Result.countStates);
   end;
 
-  // 2. Converter Alfabeto
+  // Conversão do Alfabeto
   for i := 0 to Length(Data.Alphabet) - 1 do
   begin
     if Result.countAlphabet >= MAX_ALPHABET then Break;
@@ -143,7 +140,7 @@ begin
     Inc(Result.countAlphabet);
   end;
 
-  // 3. Converter Finais
+  // Conversão dos Estados Finais
   for i := 0 to Length(Data.FinalStates) - 1 do
   begin
     if Result.countFinal >= MAX_FINAL_STATES then Break;
@@ -151,7 +148,7 @@ begin
     Inc(Result.countFinal);
   end;
 
-  // 4. Converter Estado(s) Inicial(is) - AGORA TRATA COMO ARRAY
+  // Conversão dos Estado) Iniciais
   for i := 0 to Length(Data.InitialState) - 1 do
   begin
     if Result.countInitial >= MAX_INITIAL_STATES then Break;
@@ -159,7 +156,7 @@ begin
     Inc(Result.countInitial);
   end;
 
-  // 5. Converter Transições
+  // Conversão das Transições
   if Data.Transitions <> nil then
   begin
     for i := 0 to Data.Transitions.Count - 1 do
@@ -176,17 +173,8 @@ begin
   end;
 end;
 
-procedure WriteResult(const FilePath: string; const Text: string);
-var
-  OutputFile: TextFile;
-begin
-  AssignFile(OutputFile, FilePath);
-  Rewrite(OutputFile);
-  WriteLn(OutputFile, Text);
-  CloseFile(OutputFile);
-  WriteLn('Resultado salvo em: ', FilePath);
-end;
 
+// Escrita no JSON
 procedure SaveAutomatonJSON(const FilePath: string; const A: TAutomaton);
 var
   OutputFile: TextFile;
@@ -198,11 +186,11 @@ begin
   // Abertura do JSON
   WriteLn(OutputFile, '{');
   
-  // Nome
+  // Escrita do Nome
   WriteLn(OutputFile, '  "nome" : "Automato_' + A.classification + '",');
   WriteLn(OutputFile, ''); 
 
-  // --- Alfabeto ---
+  // Escrita do Alfabeto 
   Write(OutputFile, '  "alfabeto" : [');
   for i := 0 to A.countAlphabet - 1 do
   begin
@@ -211,7 +199,7 @@ begin
   end;
   WriteLn(OutputFile, '],');
 
-  // --- Estados ---
+  // Escrita dos Estados 
   Write(OutputFile, '  "estados" : [');
   for i := 0 to A.countStates - 1 do
   begin
@@ -220,7 +208,7 @@ begin
   end;
   WriteLn(OutputFile, '],');
 
-  // --- Estados Finais ---
+  // Escrita dos Estados Finais 
   Write(OutputFile, '  "estados_finais" : [');
   for i := 0 to A.countFinal - 1 do
   begin
@@ -229,7 +217,7 @@ begin
   end;
   WriteLn(OutputFile, '],');
 
-  // --- Estado Inicial ---
+  // Escrita do Estado Inicial 
   Write(OutputFile, '  "estado_inicial" : [');
   for i := 0 to A.countInitial - 1 do
   begin
@@ -239,7 +227,7 @@ begin
   WriteLn(OutputFile, '],');
   WriteLn(OutputFile, '');
 
-  // --- Transições ---
+  // Escrita das Transições 
   WriteLn(OutputFile, '  "transicoes" : [');
   
   for i := 0 to A.countTransitions - 1 do

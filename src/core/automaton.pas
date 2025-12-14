@@ -13,12 +13,12 @@ const
 type
   // Registro de Transição
   TTransition = record
-    source: String; // String padrão (máx 255 chars)
+    source: String; 
     target: String;
     symbol: String;
   end;
 
-  // Estrutura do Autômato usando Arrays Estáticos e Contadores
+  // Estrutura do Autômato usando Arrays Estáticos e Contadores, definição básica A=(Q,Σ,F,q0​,δ)
   TAutomaton = record
     // Alfabeto
     alphabet: array[0..MAX_ALPHABET] of String;

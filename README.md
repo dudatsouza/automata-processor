@@ -31,8 +31,11 @@ CEFET-MG Campus V <br>
 Este projeto implementa um sistema completo para **manipulação, conversão e simulação de autômatos**, desenvolvido como trabalho da disciplina de **Linguagens Formais e Autômatos (LFA)** do CEFET-MG.  
 O software realiza conversões entre diferentes tipos de autômatos (AFN, AFN-ε, AFD, AFD minimizado, multi-inicial) e permite testar palavras seguindo as regras formais de cada modelo.
 
-
-## ✨ Funcionalidades Principais
+##
+<details> 
+  <summary>
+    <b style='font-size: 20px'> ✨ Funcionalidades Principais  </b>
+  </summary>
 
 - 🔹 **Conversão AFN → AFD** (Método do Subconjunto)  
 - 🔹 **Conversão AFN-ε → AFN** (remoção sistemática de ε-transições)  
@@ -40,8 +43,13 @@ O software realiza conversões entre diferentes tipos de autômatos (AFN, AFN-ε
 - 🔹 **Minimização de AFD** (usando particionamento)  
 - 🔹 **Simulação de palavras** (em qualquer autômato) 
 
+</details>
 
-## 📂 Estrutura do Projeto
+##
+<details> 
+  <summary>
+    <b style='font-size: 20px'> 📂 Estrutura do Projeto  </b>
+  </summary> 
 
 A seguir está a estrutura geral do sistema, organizada por módulos:
 
@@ -64,6 +72,213 @@ src/
 └── main/
     └── main.pas            # Programa principal (menus e execução)
 ```
+
+</details>
+
+
+##
+<details> 
+  <summary>
+    <b style='font-size: 20px'> 🗂️ Análise do projeto  </b>
+  </summary> 
+
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 📌 main.pas </b>
+  </summary> 
+
+Este módulo implementa o **controle do fluxo principal do programa**, sendo responsável pela interação com o usuário e pela orquestração das conversões entre diferentes tipos de autômatos.
+
+Nenhum algoritmo de Teoria de Linguagens Formais é implementado diretamente neste arquivo. Todas as operações teóricas são delegadas aos módulos especializados.
+
+#### Função no projeto
+
+O [`main.pas`](src/main/main.pas) atua como:
+
+* ponto de entrada da aplicação;
+* gerenciador do ciclo de execução;
+* intermediário entre entrada/saída e os algoritmos de conversão.
+
+Ele coordena a leitura do autômato, sua classificação e a execução sequencial das conversões permitidas.
+
+
+#### Fluxo de execução
+
+O fluxo geral do programa segue os seguintes passos:
+
+1. **Leitura do autômato**
+
+   * O autômato é carregado a partir de um arquivo JSON.
+   * A descrição é convertida para a representação formal interna.
+
+2. **Classificação do autômato**
+
+   * O autômato é classificado como:
+
+     * multi-inicial,
+     * AFN-ε,
+     * AFN,
+     * AFD,
+     * ou AFD mínimo.
+
+3. **Seleção dinâmica de operações**
+
+   * O menu apresentado ao usuário depende do tipo atual do autômato.
+   * Apenas conversões teoricamente válidas são disponibilizadas.
+
+4. **Encadeamento de conversões**
+
+   * Quando uma conversão direta não é possível, o programa executa automaticamente a cadeia de conversões intermediárias correta, como:
+
+     * AFN-ε → AFN → AFD
+     * AFN → AFD → AFD mínimo
+
+Esse encadeamento reflete diretamente as equivalências formais demonstradas na teoria de autômatos.
+
+</details>
+
+
+
+
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 📎 automaton.pas </b>
+  </summary> 
+
+Este módulo define a **representação formal interna de um autômato finito**, servindo como base comum para todos os algoritmos de conversão e análise implementados no projeto.
+
+O autômato é modelado por meio de um registro (`record`) que corresponde diretamente à definição matemática clássica de um autômato finito:
+
+$$
+A = (Q, \Sigma, \delta, I, F)
+$$
+
+onde:
+
+* ($Q$) é o conjunto de estados,
+* ($\Sigma$) é o alfabeto,
+* ($\delta$) é a função de transição,
+* ($I$) é o conjunto de estados iniciais,
+* ($F$) é o conjunto de estados finais.
+
+#### Estrutura de dados
+
+A estrutura [`TAutomaton`](src/core/automaton.pas#L22) utiliza **arrays estáticos com contadores explícitos**, evitando alocação dinâmica de memória e garantindo previsibilidade no uso de recursos.
+
+Os principais componentes são:
+
+* **Estados (`states`)**
+  Representa o conjunto (Q), armazenado como um vetor de identificadores de estados.
+
+* **Alfabeto (`alphabet`)**
+  Representa o conjunto de símbolos (\Sigma).
+
+* **Estados iniciais (`initialState`)**
+  Representa o conjunto (I), permitindo múltiplos estados iniciais. Essa generalização é fundamental para suportar AFNs multi-iniciais e AFNs-ε.
+
+* **Estados finais (`finalStates`)**
+  Representa o conjunto (F).
+
+* **Transições (`transitions`)**
+  Cada transição é representada por um registro contendo estado de origem, símbolo e estado de destino, permitindo múltiplas transições para um mesmo par (estado, símbolo), conforme a definição de autômatos não determinísticos.
+
+* **Classificação (`classification`)**
+  Campo auxiliar que indica o tipo atual do autômato (AFD, AFN, AFN-ε, multi-inicial, AFD mínimo), permitindo que o fluxo do programa selecione corretamente as operações disponíveis.
+
+#### Correspondência com a literatura
+
+A modelagem adotada segue diretamente a abordagem apresentada em obras clássicas, como:
+
+* Hopcroft & Ullman, *Introduction to Automata Theory, Languages, and Computation*
+* Sipser, *Introduction to the Theory of Computation*
+
+A representação explícita dos conjuntos e da função de transição facilita a implementação dos algoritmos de conversão, como a construção dos subconjuntos, remoção de ε-transições e minimização de autômatos determinísticos.
+
+</details>
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 📎 io.pas </b>
+  </summary> 
+
+
+Este módulo é responsável pela **leitura e escrita de autômatos em formato JSON**, atuando como uma **camada de entrada/saída** entre a representação externa do autômato e a representação formal interna utilizada pelo programa.
+
+Nenhum algoritmo de Teoria de Linguagens Formais é implementado neste módulo. Ele se limita a converter dados entre formatos, preservando integralmente a estrutura e a semântica do autômato descrito.
+
+#### Função no projeto
+
+O [`io.pas`](src/core/io.pas) atua como:
+
+* leitor de autômatos descritos em JSON;
+* conversor entre uma estrutura de dados dinâmica e a representação formal interna;
+* escritor de autômatos resultantes em formato JSON.
+
+Esse módulo permite que os algoritmos de conversão operem exclusivamente sobre estruturas formais, desacopladas do formato de entrada.
+
+
+#### Estrutura intermediária (`TAutomatonData`)
+
+A leitura do JSON é feita inicialmente para uma estrutura intermediária, que utiliza **arrays dinâmicos**, facilitando a interpretação flexível dos dados de entrada.
+
+Essa estrutura representa diretamente os elementos da definição formal de um autômato finito:
+
+* **Estados (`States`)** → conjunto ( Q )
+* **Alfabeto (`Alphabet`)** → conjunto ( \Sigma )
+* **Estados iniciais (`InitialState`)** → conjunto ( I )
+* **Estados finais (`FinalStates`)** → conjunto ( F )
+* **Transições (`Transitions`)** → função de transição ( \delta )
+
+O campo `InitialState` é tratado como um **array**, permitindo representar tanto autômatos com um único estado inicial quanto autômatos **multi-iniciais**, o que é fundamental para suportar AFNs e AFNs-ε.
+
+#### Conversão para a representação formal
+
+Após a leitura, os dados são convertidos para a estrutura [`TAutomaton`](src/core/automaton.pas) por meio de uma função específica de conversão.
+
+Nessa etapa:
+
+* os conjuntos são copiados para **arrays estáticos com contadores explícitos**;
+* a função de transição é representada por uma lista explícita de transições;
+* nenhuma inferência, normalização ou conversão teórica é realizada.
+
+A responsabilidade desse módulo é apenas **instanciar concretamente** o autômato descrito, deixando qualquer transformação formal para os módulos de conversão.
+
+
+#### Escrita do autômato em JSON
+
+O módulo também permite salvar o autômato atual em formato JSON, refletindo:
+
+* o alfabeto,
+* o conjunto de estados,
+* o conjunto de estados iniciais,
+* o conjunto de estados finais,
+* e a lista de transições.
+
+O estado inicial é sempre escrito como um **conjunto**, mesmo quando unitário, mantendo consistência com a representação geral adotada no projeto.
+</details>
+
+
+
+
+
+
+
+
+
+</details>
+
+
+
+
+
+
+
+
 
 
 ## 🔎 Resumo das Conversões

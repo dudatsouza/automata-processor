@@ -3,10 +3,10 @@ unit utils;
 interface
 
 uses
-  automaton, Crt;
+  automaton;
 
 var
-  AutomatonObj: TAutomaton;
+  AutomatonObj: TAutomaton; // Criando nosso automoto global
 
 procedure ClassifyAutomaton(var A: TAutomaton);
 function ContainsEpsilon(var A: TAutomaton): Boolean;
@@ -16,26 +16,32 @@ procedure ShowAutomatonDetails(var A: TAutomaton);
 
 implementation
 
+// Verificação de vazio (ε, λ, '')
 function ContainsEpsilon(var A: TAutomaton): Boolean;
 var
   i: Integer;
 begin
-  ContainsEpsilon := False; // Pascal Puro: atribui ao nome da função
-
-  // Loop usa o contador manual, não Length()
+  ContainsEpsilon := False; 
+  
   for i := 0 to A.countTransitions - 1 do
-    if A.transitions[i].symbol = 'ε' then
+  begin
+    // Verifica Epsilon ('ε'), String Vazia (''), ou Lambda ('λ')
+    if (A.transitions[i].symbol = 'ε') or 
+       (A.transitions[i].symbol = '') or 
+       (A.transitions[i].symbol = 'λ') then
     begin
       ContainsEpsilon := True;
       Exit;
     end;
+  end;
 end;
 
+// Verificação se é determinístico
 function IsDeterministic(var A: TAutomaton): Boolean;
 var
   i, j, count: Integer;
 begin
-  // Pré-condição: Verifica contador de estados iniciais
+  // Confirmar q não é um MULTI-INICIAL
   if A.countInitial <> 1 then
   begin
     IsDeterministic := False;
@@ -45,14 +51,16 @@ begin
   // Percorre todas as transições para validar regras de AFD
   for i := 0 to A.countTransitions - 1 do
   begin
-    // 1. AFD não admite epsilon
-    if A.transitions[i].symbol = 'ε' then
+    // Confirmar q não tem vazio (ε, λ, '')
+    if (A.transitions[i].symbol = 'ε') or 
+       (A.transitions[i].symbol = '') or 
+       (A.transitions[i].symbol = 'λ') then
     begin
       IsDeterministic := False;
       Exit;
     end;
 
-    // 2. Verifica se há ambiguidade (mesma origem, mesmo símbolo, destinos diferentes)
+    // Confirmar se há ambiguidade (mesma origem, mesmo símbolo, destinos diferentes)
     count := 0;
     for j := 0 to A.countTransitions - 1 do
     begin
@@ -74,6 +82,7 @@ begin
   IsDeterministic := True;
 end;
 
+// Verificação se é um AFD-MINIMO
 function IsMinimizedAFD(var A: TAutomaton): Boolean;
 var
   i, j, k, idxTarget1, idxTarget2: Integer;
@@ -113,6 +122,7 @@ var
       end;
   end;
 
+  // Função auxiliar para ver se é estado final
   function IsFinal(idx: Integer): Boolean;
   var f: Integer;
   begin
@@ -126,20 +136,21 @@ var
   end;
 
 begin
-  // 0. Pré-requisito: Deve ser determinístico
+  // Verificação se é determinístico
   if not IsDeterministic(A) then
   begin
     IsMinimizedAFD := False;
     Exit;
   end;
 
+  // Se não tiver nenhum estado, é minimo
   if A.countStates = 0 then
   begin
     IsMinimizedAFD := True;
     Exit;
   end;
 
-  // --- PASSO 1: VERIFICAR ESTADOS INACESSÍVEIS (BFS) ---
+  // Verificar se existe algum estado q não é alcansável (usanmos aq BFS)
   for i := 0 to A.countStates - 1 do Reachable[i] := False;
   
   qStart := 0; 
@@ -186,14 +197,14 @@ begin
       Exit;
     end;
 
-  // --- PASSO 2: VERIFICAR ESTADOS EQUIVALENTES (Tabela) ---
+  // Análise principal - Verificar se há estados equivalentes (usamos aq a Tabela de Distinguibilidade)
   
   // Inicializa tabela: Tudo False (assume equivalentes a princípio)
   for i := 0 to A.countStates - 1 do
     for j := 0 to A.countStates - 1 do
       Distinguishable[i, j] := False;
 
-  // Marca pares triviais: (Final) vs (Não-Final)
+  // Compara dois estados, vendo se os dois são finais ou não-finais, se forem diferentes, obviamente nao são iguais
   for i := 0 to A.countStates - 1 do
     for j := 0 to A.countStates - 1 do
     begin
@@ -201,9 +212,11 @@ begin
         Distinguishable[i, j] := True;
     end;
 
-  // Loop de marcação até estabilizar
+  // Loop de marcação até estabilizar (enquanto estiver coisa diferente, continua verificando)
   repeat
     changed := False;
+
+    // vamos comparar dois estados
     for i := 0 to A.countStates - 1 do
     begin
       for j := 0 to A.countStates - 1 do
@@ -211,12 +224,16 @@ begin
         // Se ainda são considerados equivalentes (False), tenta distinguir
         if (i <> j) and (not Distinguishable[i, j]) then
         begin
+          // Analisar comportamento de cada estado para cada letra do alfabeto, se eles tiverem o mesmo comportamento para a mesma letra, eles podem ser EQUIVALENTES (continuam 'False' na tabela).
+          
+          // Para cada letra do alfabeto, testamos se 'i' e 'j' se comportam igual
           for k := 0 to A.countAlphabet - 1 do
           begin
+            // Vê para onde 'i' vai (t1) e para onde 'j' vai (t2) com a letra atual
             t1 := GetTarget(i, A.alphabet[k]);
             t2 := GetTarget(j, A.alphabet[k]);
             
-            // Se ambos vão para algum lugar
+            // CASO 1: Ambos os estados possuem caminho (transição)
             if (t1 <> '') and (t2 <> '') then
             begin
               idxTarget1 := GetStateIndex(t1);
@@ -224,16 +241,20 @@ begin
               
               if (idxTarget1 <> -1) and (idxTarget2 <> -1) then
               begin
-                // Se os destinos são distinguíveis, então as origens também são
+                // A Lógica do "Dominó":
+                // Se os destinos (filhos) já são sabidos como diferentes na tabela,
+                // então as origens (pais 'i' e 'j') obrigatoriamente também são.
                 if Distinguishable[idxTarget1, idxTarget2] then
                 begin
                   Distinguishable[i, j] := True;
-                  changed := True;
-                  Break;
+                  changed := True; // Avisa que mudou algo para repetir o ciclo
+                  Break; // Já achamos uma diferença, não precisa testar outras letras
                 end;
               end;
             end
-            // Se um tem transição e o outro não para o mesmo símbolo -> Distintos
+            
+            // CASO 2: Um tem transição e o outro não (Inconsistência Estrutural)
+            // Se um "anda" e o outro "trava" com a mesma letra, eles são diferentes.
             else if (t1 <> '') <> (t2 <> '') then
             begin
                 Distinguishable[i, j] := True;
@@ -246,21 +267,26 @@ begin
     end;
   until not changed;
 
-  // Verificação Final: Se existir algum par (i, j) com i != j que NÃO seja distinguível,
-  // significa que eles são equivalentes e poderiam ser fundidos. Logo, não é mínimo.
+  // Conferindo para dar a resposta 
+  
+  // Varre a tabela procurando pares de estados distintos (i, j) que sobreviveram como "Iguais"
   for i := 0 to A.countStates - 1 do
-    for j := i + 1 to A.countStates - 1 do // Olha apenas triângulo superior
+    for j := i + 1 to A.countStates - 1 do // "j = i + 1" garante que não comparamos (0,0) nem repetimos (0,1) e (1,0)
     begin
+      // Se a tabela ainda diz False, significa que não achamos NENHUMA diferença entre 'i' e 'j'.
+      // Conclusão: Eles são estados equivalentes (gêmeos).
       if not Distinguishable[i, j] then
       begin
-        IsMinimizedAFD := False; // Encontrou par equivalente
+        IsMinimizedAFD := False; // Se tem estados gêmeos, o automato tem "gordura", logo não é mínimo.
         Exit;
       end;
     end;
 
+  // Se o loop terminou sem achar nenhum par gêmeo, todos os estados são únicos e necessários.
   IsMinimizedAFD := True;
 end;
 
+// Função para mostrar Autômato Atual
 procedure ShowAutomatonDetails(var A: TAutomaton);
 var
   i: Integer;
@@ -308,25 +334,27 @@ begin
   writeln;
 end;
 
+// Classificação do Autômato
 procedure ClassifyAutomaton(var A: TAutomaton);
 begin
-  // Verifica contador de iniciais
+  // Verificar se tem mais de um estado inicial
   if A.countInitial > 1 then
   begin
     A.classification := 'MULTI-INICIAL';
     Exit;
   end;
 
+  // Verificar se tem vazio (ε, λ, '')
   if ContainsEpsilon(A) then
   begin
     A.classification := 'AFN-E';
     Exit;
   end;
 
-  // 3. Verifica Determinismo
+  // Verificar se é Determinismo
   if IsDeterministic(A) then
   begin
-    // Se for AFD, agora fazemos a Verificação Rigorosa de Minimização
+    // Se for AFD, vetificar se está minimizado ou não
     if IsMinimizedAFD(A) then
       A.classification := 'AFD-MINIMO'
     else
