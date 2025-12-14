@@ -141,7 +141,8 @@ begin
   // 6. Reclassificar
   ClassifyAutomaton(A); 
 
-  writeln('>> Conversao concluida! Novo estado inicial unificado: ', newInitial);
+  writeln('>> Conversao Multi-Inicial para AFN-E executada com sucesso!');
+  SaveAutomatonJSON('./data/output/AFN_multiinicial_conertido.json', A);
 end;
 
 end.

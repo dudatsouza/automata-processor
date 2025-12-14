@@ -108,10 +108,26 @@ begin
   begin
     originState := A.states[sIdx];
 
-    // 1. Calcular Epsilon-Fecho da Origem
-    // Limpa array de closure
+    // 1. Limpar o array de fecho (Lógica SEGURA do HEAD)
+    // Usamos MAX_STATES para garantir que não sobra lixo de memória
     for i := 0 to MAX_STATES do originClosure[i] := False;
+
+    // 2. Calcular o Epsilon Fecho
     ComputeEpsilonClosure(originState, A, originClosure);
+
+    // 3. Debug / Prints (Funcionalidade da Feature ADAPTADA)
+    // Agora está ativo e usando os contadores corretos (countStates)
+    writeln('Imprimindo E-fechos encontrados...');
+    write('e-fecho(', originState, ') = { ');
+
+    for i := 0 to A.countStates - 1 do
+    begin
+      // Verifica se o índice 'i' está marcado como True no array estático
+      if originClosure[i] then
+        write(A.states[i], ' ');
+    end;
+    writeln('}');
+    writeln;
 
     // ========================================================
     // Passo 2: Gerar Novas Transições
