@@ -12,6 +12,7 @@ var
     data: TAutomatonData;
     changeInput: boolean;
 
+// Função para Limpar Tela e Mostrar o Atual Autômato
 procedure Clear();
 begin
   writeln();
@@ -24,6 +25,7 @@ begin
   ShowAutomatonDetails(AutomatonObj); 
 end;
 
+// Função de Confirmação para executar várias conversões ao mesmo tempo
 procedure ConfirmConversion(const currentType, targetType, conversionSteps: String; var run: Boolean);
 var
   opt: Char;
@@ -34,13 +36,23 @@ begin
   writeln('A seguinte cadeia de conversoes sera executada:');
   writeln('  ', conversionSteps);
   writeln('----------------------------------------------');
-  write('Deseja prosseguir (S/N)? ');
-  readln(opt);
 
-  // Verifica se a resposta começa com 'S' ou 's'
-  run := (UpCase(opt) = 'S'); 
+  repeat
+    write('Deseja prosseguir (S/N)? ');
+    readln(opt);
+    
+    // Converte para maiúscula imediatamente para simplificar os testes
+    opt := UpCase(opt);
+
+    if (opt <> 'S') and (opt <> 'N') then
+      writeln('Opcao invalida! Por favor, digite apenas S ou N.');
+
+  until (opt = 'S') or (opt = 'N');
+
+  run := (opt = 'S'); 
 end;
 
+// Menu para Autômato classificado como MULTI-INICIAL
 procedure MenuMultiInitial();
 var
     runConversion: Boolean;
@@ -52,21 +64,33 @@ begin
     writeln('2. Converter de AFN para AFD');
     writeln('3. Minimizar AFD');
     writeln('4. Testar palavras');
-    writeln('5. Mostrar automato atual'); // << NOVA OPÇÃO
+    writeln('5. Mostrar automato atual'); 
     writeln('6. Alterar entrada');
     writeln('7. Sair');
     write('Opcao: ');
     readln(option);
 
     case option of
-        0: begin ConvertMultiInitialToAFNE(AutomatonObj); ClassifyAutomaton(AutomatonObj); ShowAutomatonDetails(AutomatonObj); end;
+        0: 
+        begin 
+            if AutomatonObj.classification = 'MULTI-INICIAL' then
+                ConvertMultiInitialToAFNE(AutomatonObj)
+            else
+                writeln('O automato nao eh multi-inicial. Operacao pulada.');
+        end;
+        
         1: 
         begin
             ConfirmConversion('MULTI-INICIAL', 'AFN', 'MULTI-INICIAL -> AFN-E -> AFN', runConversion);
             if runConversion then
             begin
-                ConvertMultiInitialToAFNE(AutomatonObj);
-                ConvertAFNEToAFN(AutomatonObj);
+                if AutomatonObj.classification = 'MULTI-INICIAL' then
+                    ConvertMultiInitialToAFNE(AutomatonObj);
+
+                if AutomatonObj.classification = 'AFN-E' then
+                    ConvertAFNEToAFN(AutomatonObj)
+                else if AutomatonObj.classification = 'AFN' then
+                    writeln('A etapa AFN-E -> AFN foi pulada.');
             end;
         end;
 
@@ -75,9 +99,18 @@ begin
             ConfirmConversion('MULTI-INICIAL', 'AFD', 'MULTI-INICIAL -> AFN-E -> AFN -> AFD', runConversion);
             if runConversion then
             begin
-                ConvertMultiInitialToAFNE(AutomatonObj);
-                ConvertAFNEToAFN(AutomatonObj);
-                ConvertAFNToAFD(AutomatonObj);
+                if AutomatonObj.classification = 'MULTI-INICIAL' then
+                    ConvertMultiInitialToAFNE(AutomatonObj);
+
+                if AutomatonObj.classification = 'AFN-E' then
+                    ConvertAFNEToAFN(AutomatonObj)
+                else if AutomatonObj.classification = 'AFN' then
+                    writeln('A etapa AFN-E -> AFN foi pulada.');
+
+                if AutomatonObj.classification = 'AFN' then
+                    ConvertAFNToAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD' then
+                    writeln('A etapa AFN -> AFD foi pulada.');
             end;
         end;
         
@@ -86,10 +119,25 @@ begin
             ConfirmConversion('MULTI-INICIAL', 'AFD MINIMO', 'MULTI-INICIAL -> AFN-E -> AFN -> AFD -> MINIMIZAR', runConversion);
             if runConversion then
             begin
-                ConvertMultiInitialToAFNE(AutomatonObj);
-                ConvertAFNEToAFN(AutomatonObj);
-                ConvertAFNToAFD(AutomatonObj);
-                MinimizeAFD(AutomatonObj);
+                if AutomatonObj.classification = 'MULTI-INICIAL' then
+                    ConvertMultiInitialToAFNE(AutomatonObj);
+                
+                if AutomatonObj.classification = 'AFN-E' then
+                    ConvertAFNEToAFN(AutomatonObj)
+                else if AutomatonObj.classification = 'AFN' then
+                    writeln('A etapa AFN-E -> AFN foi pulada.');
+
+                if AutomatonObj.classification = 'AFN' then
+                    ConvertAFNToAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD' then
+                    writeln('A etapa AFN -> AFD foi pulada.');
+
+                if AutomatonObj.classification = 'AFD' then
+                    MinimizeAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD-MINIMO' then
+                    writeln('A etapa de minimizar AFD foi pulada, pois o automato ja e minimizado.')
+                else
+                    writeln('Nao foi possivel minimizar, pois o automato nao eh um AFD.');
             end;
         end;
         
@@ -100,6 +148,7 @@ begin
     end;
 end;
 
+// Menu para Autômato classificado como AFN-E
 procedure MenuAFNE();
 var
     runConversion: Boolean;
@@ -117,31 +166,49 @@ begin
     readln(option);
 
     case option of
-        // Opção 0: Conversão direta
         0: begin 
-            ConvertAFNEToAFN(AutomatonObj); 
+            if AutomatonObj.classification = 'AFN-E' then
+                ConvertAFNEToAFN(AutomatonObj)
+            else if AutomatonObj.classification = 'AFN' then
+                writeln('O automato ja e do tipo AFN. Conversao pulada.')
+            else
+                writeln('O automato nao e AFN-E. Operacao pulada.');
         end;
 
-        // Opção 1: Pipeline para AFD
         1: 
         begin
             ConfirmConversion('AFN-E', 'AFD', 'AFN-E -> AFN -> AFD', runConversion);
             if runConversion then
             begin
-                ConvertAFNEToAFN(AutomatonObj);
-                ConvertAFNToAFD(AutomatonObj);
+                if AutomatonObj.classification = 'AFN-E' then
+                    ConvertAFNEToAFN(AutomatonObj);
+                
+                if AutomatonObj.classification = 'AFN' then
+                    ConvertAFNToAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD' then
+                    writeln('A etapa AFN -> AFD foi pulada.');
             end;
         end;
 
-        // Opção 2: Pipeline para AFD Mínimo
         2: 
         begin
             ConfirmConversion('AFN-E', 'AFD MINIMO', 'AFN-E -> AFN -> AFD -> MINIMIZAR', runConversion);
             if runConversion then
             begin
-                ConvertAFNEToAFN(AutomatonObj);
-                ConvertAFNToAFD(AutomatonObj);
-                MinimizeAFD(AutomatonObj);
+                if AutomatonObj.classification = 'AFN-E' then
+                    ConvertAFNEToAFN(AutomatonObj);
+                
+                if AutomatonObj.classification = 'AFN' then
+                    ConvertAFNToAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD' then
+                    writeln('A etapa AFN -> AFD foi pulada.');
+
+                if AutomatonObj.classification = 'AFD' then
+                    MinimizeAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD-MINIMO' then
+                    writeln('A etapa de minimizar AFD foi pulada, pois o automato ja e minimizado.')
+                else
+                    writeln('Nao foi possivel minimizar, pois o automato nao e um AFD.');
             end;
         end;
         
@@ -152,6 +219,7 @@ begin
     end;
 end;
 
+// Menu para Autômato classificado como AFN
 procedure MenuAFN();
 var
     runConversion: Boolean;
@@ -168,19 +236,31 @@ begin
     readln(option);
 
     case option of
-        // Opção 0: Conversão direta
         0: begin 
-            ConvertAFNToAFD(AutomatonObj); 
+            if AutomatonObj.classification = 'AFN' then
+                ConvertAFNToAFD(AutomatonObj)
+            else if AutomatonObj.classification = 'AFD' then
+                writeln('O automato ja e do tipo AFD. Conversao pulada.')
+            else
+                writeln('O automato nao e AFN. Operacao pulada.');
         end;
 
-        // Opção 1: Pipeline para AFD Mínimo
         1: 
         begin
             ConfirmConversion('AFN', 'AFD MINIMO', 'AFN -> AFD -> MINIMIZAR', runConversion);
             if runConversion then
             begin
-                ConvertAFNToAFD(AutomatonObj);
-                MinimizeAFD(AutomatonObj);
+                if AutomatonObj.classification = 'AFN' then
+                    ConvertAFNToAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD' then
+                    writeln('A etapa AFN -> AFD foi pulada.');
+
+                if AutomatonObj.classification = 'AFD' then
+                    MinimizeAFD(AutomatonObj)
+                else if AutomatonObj.classification = 'AFD-MINIMO' then
+                    writeln('A etapa de minimizar AFD foi pulada, pois o automato ja e minimizado.')
+                else
+                    writeln('Nao foi possivel minimizar, pois o automato nao e um AFD.');
             end;
         end;
         
@@ -191,6 +271,7 @@ begin
     end;
 end;
 
+// Menu para Autômato classificado como AFD
 procedure MenuAFD();
 begin
     Clear();
@@ -204,11 +285,7 @@ begin
     readln(option);
 
     case option of
-        // Opção 0: Conversão direta
-        0: begin 
-            MinimizeAFD(AutomatonObj); 
-        end;
-        
+        0: MinimizeAFD(AutomatonObj); 
         1: TestWords(AutomatonObj);
         2: ShowAutomatonDetails(AutomatonObj); 
         3: changeInput := true;
@@ -216,6 +293,7 @@ begin
     end;
 end;
 
+// Menu para Autômato classificado como AFD-MINIMO
 procedure MenuAFDMinimized();
 begin
     Clear();
@@ -235,14 +313,16 @@ begin
     end;
 end;
 
+// MAIN
 begin
-    ClrScr;   // limpa o terminal (Windows, macOS, Linux)
+    ClrScr; // Limpar terminal
 
     exitProgram := false;
 
     fileInput := 'multi.json';
     
     repeat
+        // Menu Principal - Inicial
         writeln;
         writeln('=== CONVERSOR DE AUTOMATOS ===');
         writeln('1. Ler arquivo padrao (', fileInput, ')');
@@ -262,43 +342,43 @@ begin
         else if option = 3 then
         begin
             exitProgram := true;
-            continue;
         end;
 
-        write('Lendo arquivo: ' + path);
+        if not exitProgram then
+        begin
+            write('Lendo arquivo: ' + path);
 
-        // Read and classify automaton
-        data := ReadJSON(path);
-        AutomatonObj := ConvertTAutomatonData(data);
-        ClassifyAutomaton(AutomatonObj);
+            data := ReadJSON(path);
+            AutomatonObj := ConvertTAutomatonData(data);
+            ClassifyAutomaton(AutomatonObj);
 
-        writeln;
-        writeln('Automato classificado como: ', AutomatonObj.classification);
+            writeln;
+            writeln('Automato classificado como: ', AutomatonObj.classification);
 
-        ShowAutomatonDetails(AutomatonObj);
+            ShowAutomatonDetails(AutomatonObj);
 
-        // Show correct menu
-        exitProgram := false;
-        changeInput := false;
+            exitProgram := false;
+            changeInput := false;
 
-        repeat
-            if AutomatonObj.classification = 'MULTI-INICIAL' then
-                MenuMultiInitial()
-            else if AutomatonObj.classification = 'AFN-E' then
-                MenuAFNE()
-            else if AutomatonObj.classification = 'AFN' then
-                MenuAFN()
-            else if AutomatonObj.classification = 'AFD' then
-                MenuAFD()
-            else if AutomatonObj.classification = 'AFD-MINIMO' then
-                MenuAFDMinimized()
-            else
-            begin
-                writeln('Tipo de automato desconhecido!');
-                exitProgram := true;
-            end;
+            repeat
+                if AutomatonObj.classification = 'MULTI-INICIAL' then
+                    MenuMultiInitial()
+                else if AutomatonObj.classification = 'AFN-E' then
+                    MenuAFNE()
+                else if AutomatonObj.classification = 'AFN' then
+                    MenuAFN()
+                else if AutomatonObj.classification = 'AFD' then
+                    MenuAFD()
+                else if AutomatonObj.classification = 'AFD-MINIMO' then
+                    MenuAFDMinimized()
+                else
+                begin
+                    writeln('Tipo de automato desconhecido!');
+                    exitProgram := true;
+                end;
 
-        until exitProgram or changeInput;
+            until exitProgram or changeInput;
+        end;
 
     until exitProgram and (not changeInput);
 

@@ -396,7 +396,7 @@ begin
   A := newA;
   ClassifyAutomaton(A);
 
-  if A.classification = 'AFN' then
+  if A.classification = 'AFD-MINIMO' then
   begin
     writeln('>> Minimização de AFD executada com sucesso!');
     SaveAutomatonJSON('./data/output/AFD_MINIMO.json', A);
