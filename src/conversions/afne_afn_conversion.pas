@@ -62,12 +62,13 @@ begin
   SetLength(newTransitions, 0);
 
   // --------------------------------------------------------
-  // Step 2: For each state, compute closure and generate transitions
+  // Step 2:Para cada estado, computamos os e-fechos e geramos transições
   // --------------------------------------------------------
+  writeln('Imprimindo E-fechos encontrados...');
   for sIdx := 0 to High(A.states) do
   begin
     // Reset closure
-    writeln('Imprimindo E-fechos encontrados...');
+   
     for i := 0 to High(closure) do
       closure[i] := False;
 
