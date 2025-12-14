@@ -12,7 +12,7 @@ type
     Name: string;
     States: array of string;
     Alphabet: array of string;
-    InitialState: string;
+    InitialState: array of string;
     FinalStates: array of string;
     Transitions: TJSONArray;
   end;
@@ -44,7 +44,14 @@ begin
     Obj := JsonData as TJSONObject;
 
     Result.Name := Obj.Get('nome', '');
-    Result.InitialState := Obj.Get('estado_inicial', '');
+    
+    with Obj.Arrays['estado_inicial'] do
+    begin
+      SetLength(Result.InitialState, Count);
+      for i := 0 to Count - 1 do
+        Result.InitialState[i] := Strings[i];
+    end;
+
 
     with Obj.Arrays['estados'] do
     begin
@@ -94,8 +101,10 @@ begin
     Result.finalStates[i] := Data.FinalStates[i];
 
   // Converter estado inicial (que era string) para array
-  SetLength(Result.initialState, 1);
-  Result.initialState[0] := Data.InitialState;
+  SetLength(Result.initialState, Length(Data.InitialState));
+  for i := 0 to High(Data.InitialState) do
+    Result.initialState[i] := Data.InitialState[i];
+
 
   // Transições
   SetLength(Result.transitions, Data.Transitions.Count);

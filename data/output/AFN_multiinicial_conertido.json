@@ -1,0 +1,12 @@
+{ "nome" : "Automato_AFN-E", 
+"alfabeto" : ["a", "b"], 
+"estados" : ["q0", "q1", "q2", "qinit"], 
+"estados_finais" : ["q2"], 
+"estado_inicial" : ["qinit"], 
+"transicoes" : [
+    { "origem" : "q0", "destino" : "q1", "simbolo" : "a" }, 
+    { "origem" : "q1", "destino" : "q2", "simbolo" : "b" }, 
+    { "origem" : "qinit", "destino" : "q0", "simbolo" : "ε" }, 
+    { "origem" : "qinit", "destino" : "q1", "simbolo" : "ε" }
+    ] 
+}

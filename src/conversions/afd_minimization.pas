@@ -393,7 +393,7 @@ begin
 end;
 
 
-  // initialState (no seu tipo é array; vamos assumir 1 estado inicial)
+  // initialState (no seu tipo é array; estamos assumindo 1 estado inicial)
   if Length(A.initialState) > 0 then
   begin
     i := IndexOfState(A, A.initialState[0]);

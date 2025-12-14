@@ -22,7 +22,7 @@ begin
   writeln('>> Convertendo automato Multi-Inicial para AFN-E...');
 
   // Nome fixo para novo estado inicial unificado
-  newInitial := 'q0';
+  newInitial := 'qinit';
 
   // Criar novo vetor de transições:
   // todas as transições antigas + ε-transições para cada estado inicial antigo
@@ -57,6 +57,7 @@ begin
   A.classification := 'AFN-E';
 
   writeln('>> Conversao Multi-Inicial para AFN-E executada com sucesso!');
+  SaveAutomatonJSON('./data/output/AFN_multiinicial_conertido.json', A);
 end;
 
 end.

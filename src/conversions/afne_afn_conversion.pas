@@ -67,11 +67,22 @@ begin
   for sIdx := 0 to High(A.states) do
   begin
     // Reset closure
+    writeln('Imprimindo E-fechos encontrados...');
     for i := 0 to High(closure) do
       closure[i] := False;
 
     // Compute epsilon-closure of A.states[sIdx]
     ComputeEpsilonClosure(A.states[sIdx], A, closure);
+    
+    write('e-fecho(', A.states[sIdx], ') = { ');
+    for i := 0 to High(A.states) do
+      begin
+        if closure[i] then
+          write(A.states[i], ' ');
+      end;
+      writeln('}');
+      writeln;
+
 
     // For every state reachable in closure
     for i := 0 to High(A.states) do
