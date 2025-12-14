@@ -3,7 +3,7 @@ unit afne_conversion;
 interface
 
 uses
-  automaton, utils, sysutils; 
+  automaton, utils, sysutils, io;
 
 procedure ConvertMultiInitialToAFNE(var A: TAutomaton);
 

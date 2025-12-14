@@ -1,6 +1,6 @@
 unit io;
 
-{$mode objfpc}{$H+} 
+{$mode objfpc}{$H+} // Modo ObjFPC para arrays dinâmicos e Strings Longas (AnsiString)
 
 interface
 
@@ -8,11 +8,13 @@ uses
   SysUtils, Classes, fpjson, jsonparser, automaton;
 
 type
+  // Estrutura temporária para leitura do JSON (Dinâmica)
   TAutomatonData = record
     Name: string;
     States: array of string;
     Alphabet: array of string;
-    InitialState: array of string;
+    // InitialState agora é ARRAY OF STRING para suportar ["q0"] ou ["q0", "q1"]
+    InitialState: array of string; 
     FinalStates: array of string;
     Transitions: TJSONArray;
   end;
@@ -29,6 +31,7 @@ var
   InputFile: TStringList;
   JsonData: TJSONData;
   Obj: TJSONObject;
+  InitStatesJSON: TJSONData;
   i: Integer;
 begin
   if not FileExists(FilePath) then
@@ -44,15 +47,36 @@ begin
     Obj := JsonData as TJSONObject;
 
     Result.Name := Obj.Get('nome', '');
-    
-    with Obj.Arrays['estado_inicial'] do
+
+    // --- Leitura Robusta de Estado Inicial (String ou Array) ---
+    InitStatesJSON := Obj.Find('estado_inicial');
+    if InitStatesJSON <> nil then
     begin
-      SetLength(Result.InitialState, Count);
-      for i := 0 to Count - 1 do
-        Result.InitialState[i] := Strings[i];
+      if InitStatesJSON.JSONType = jtArray then
+      begin
+        // Se for array ["q0", "q1"]
+        with TJSONArray(InitStatesJSON) do
+        begin
+          SetLength(Result.InitialState, Count);
+          for i := 0 to Count - 1 do
+            Result.InitialState[i] := Strings[i];
+        end;
+      end
+      else
+      begin
+        // Se for string simples "q0" (retrocompatibilidade)
+        SetLength(Result.InitialState, 1);
+        Result.InitialState[0] := InitStatesJSON.AsString;
+      end;
+    end
+    else
+    begin
+      SetLength(Result.InitialState, 0);
     end;
+    // -----------------------------------------------------------
 
-
+    // Ler Estados
+    if Obj.Find('estados') <> nil then
     with Obj.Arrays['estados'] do
     begin
       SetLength(Result.States, Count);
@@ -60,6 +84,8 @@ begin
         Result.States[i] := Strings[i];
     end;
 
+    // Ler Alfabeto
+    if Obj.Find('alfabeto') <> nil then
     with Obj.Arrays['alfabeto'] do
     begin
       SetLength(Result.Alphabet, Count);
@@ -67,6 +93,8 @@ begin
         Result.Alphabet[i] := Strings[i];
     end;
 
+    // Ler Estados Finais
+    if Obj.Find('estados_finais') <> nil then
     with Obj.Arrays['estados_finais'] do
     begin
       SetLength(Result.FinalStates, Count);
@@ -74,7 +102,12 @@ begin
         Result.FinalStates[i] := Strings[i];
     end;
 
-    Result.Transitions := Obj.Arrays['transicoes'].Clone as TJSONArray;
+    // Clona o array de transições
+    if Obj.Find('transicoes') <> nil then
+      Result.Transitions := Obj.Arrays['transicoes'].Clone as TJSONArray
+    else
+      Result.Transitions := TJSONArray.Create; // Vazio se não existir
+
   finally
     InputFile.Free;
     JsonData.Free;
@@ -86,6 +119,7 @@ var
   i: Integer;
   Obj: TJSONObject;
 begin
+  // Inicializa os contadores manuais do formato estático
   Result.countStates := 0;
   Result.countAlphabet := 0;
   Result.countFinal := 0;
@@ -93,29 +127,15 @@ begin
   Result.countTransitions := 0;
   Result.classification := '';
 
-  SetLength(Result.states, Length(Data.States));
-  for i := 0 to High(Data.States) do
-    Result.states[i] := Data.States[i];
-
-  SetLength(Result.finalStates, Length(Data.FinalStates));
-  for i := 0 to High(Data.FinalStates) do
-    Result.finalStates[i] := Data.FinalStates[i];
-
-  // Converter estado inicial (que era string) para array
-  SetLength(Result.initialState, Length(Data.InitialState));
-  for i := 0 to High(Data.InitialState) do
-    Result.initialState[i] := Data.InitialState[i];
-
-
-  // Transições
-  SetLength(Result.transitions, Data.Transitions.Count);
-  for i := 0 to Data.Transitions.Count - 1 do
+  // 1. Converter Estados
+  for i := 0 to Length(Data.States) - 1 do
   begin
     if Result.countStates >= MAX_STATES then Break;
     Result.states[Result.countStates] := Data.States[i];
     Inc(Result.countStates);
   end;
 
+  // 2. Converter Alfabeto
   for i := 0 to Length(Data.Alphabet) - 1 do
   begin
     if Result.countAlphabet >= MAX_ALPHABET then Break;
@@ -123,6 +143,7 @@ begin
     Inc(Result.countAlphabet);
   end;
 
+  // 3. Converter Finais
   for i := 0 to Length(Data.FinalStates) - 1 do
   begin
     if Result.countFinal >= MAX_FINAL_STATES then Break;
@@ -130,20 +151,28 @@ begin
     Inc(Result.countFinal);
   end;
 
-  if Data.InitialState <> '' then
+  // 4. Converter Estado(s) Inicial(is) - AGORA TRATA COMO ARRAY
+  for i := 0 to Length(Data.InitialState) - 1 do
   begin
-    Result.initialState[0] := Data.InitialState;
-    Result.countInitial := 1;
+    if Result.countInitial >= MAX_INITIAL_STATES then Break;
+    Result.initialState[Result.countInitial] := Data.InitialState[i];
+    Inc(Result.countInitial);
   end;
 
-  for i := 0 to Data.Transitions.Count - 1 do
+  // 5. Converter Transições
+  if Data.Transitions <> nil then
   begin
-    if Result.countTransitions >= MAX_TRANSITIONS then Break;
-    Obj := Data.Transitions.Objects[i];
-    Result.transitions[Result.countTransitions].source := Obj.Get('origem', '');
-    Result.transitions[Result.countTransitions].target := Obj.Get('destino', '');
-    Result.transitions[Result.countTransitions].symbol := Obj.Get('simbolo', '');
-    Inc(Result.countTransitions);
+    for i := 0 to Data.Transitions.Count - 1 do
+    begin
+      if Result.countTransitions >= MAX_TRANSITIONS then Break;
+
+      Obj := Data.Transitions.Objects[i];
+      Result.transitions[Result.countTransitions].source := Obj.Get('origem', '');
+      Result.transitions[Result.countTransitions].target := Obj.Get('destino', '');
+      Result.transitions[Result.countTransitions].symbol := Obj.Get('simbolo', '');
+      
+      Inc(Result.countTransitions);
+    end;
   end;
 end;
 
@@ -158,9 +187,6 @@ begin
   WriteLn('Resultado salvo em: ', FilePath);
 end;
 
-// ============================================================================
-// NOVA VERSÃO: Escrita Manual para Formatação Bonita (Pretty Print)
-// ============================================================================
 procedure SaveAutomatonJSON(const FilePath: string; const A: TAutomaton);
 var
   OutputFile: TextFile;
@@ -174,7 +200,7 @@ begin
   
   // Nome
   WriteLn(OutputFile, '  "nome" : "Automato_' + A.classification + '",');
-  WriteLn(OutputFile, ''); // Linha em branco para separar
+  WriteLn(OutputFile, ''); 
 
   // --- Alfabeto ---
   Write(OutputFile, '  "alfabeto" : [');
@@ -213,7 +239,7 @@ begin
   WriteLn(OutputFile, '],');
   WriteLn(OutputFile, '');
 
-  // --- Transições (Formatadas linha a linha) ---
+  // --- Transições ---
   WriteLn(OutputFile, '  "transicoes" : [');
   
   for i := 0 to A.countTransitions - 1 do
@@ -224,16 +250,13 @@ begin
     Write(OutputFile, '"simbolo" : "' + A.transitions[i].symbol + '"');
     Write(OutputFile, ' }');
 
-    // Se não for a última, coloca vírgula e pula linha
     if i < A.countTransitions - 1 then
       WriteLn(OutputFile, ',')
     else
-      WriteLn(OutputFile, ''); // Última não tem vírgula
+      WriteLn(OutputFile, '');
   end;
   
   WriteLn(OutputFile, '  ]');
-  
-  // Fechamento do JSON
   WriteLn(OutputFile, '}');
 
   CloseFile(OutputFile);

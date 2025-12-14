@@ -1,5 +1,5 @@
 {
-  "nome" : "Automato_AFN-E",
+  "nome" : "Automato_AFD",
 
   "alfabeto" : ["a", "b"],
   "estados" : ["q3", "q1", "q2", "q0"],
@@ -9,7 +9,7 @@
   "transicoes" : [
     { "origem" : "q3", "destino" : "q1", "simbolo" : "a" },
     { "origem" : "q1", "destino" : "q2", "simbolo" : "b" },
-    { "origem" : "q0", "destino" : "q3", "simbolo" : "ε" },
-    { "origem" : "q0", "destino" : "q1", "simbolo" : "ε" }
+    { "origem" : "q0", "destino" : "q1", "simbolo" : "a" },
+    { "origem" : "q0", "destino" : "q2", "simbolo" : "b" }
   ]
 }
