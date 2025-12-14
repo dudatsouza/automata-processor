@@ -1,0 +1,14 @@
+{
+  "nome" : "Automato_AFD-MINIMO",
+
+  "alfabeto" : ["a", "b"],
+  "estados" : ["q0", "q0_q1", "q2"],
+  "estados_finais" : ["q2"],
+  "estado_inicial" : ["q0"],
+
+  "transicoes" : [
+    { "origem" : "q0", "destino" : "q0_q1", "simbolo" : "a" },
+    { "origem" : "q0_q1", "destino" : "q0_q1", "simbolo" : "a" },
+    { "origem" : "q0_q1", "destino" : "q2", "simbolo" : "b" }
+  ]
+}

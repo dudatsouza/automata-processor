@@ -9,9 +9,6 @@ procedure TestWords(var A: TAutomaton);
 
 implementation
 
-// ============================================================================
-// FUNÇÕES AUXILIARES LOCAIS (Estáticas)
-// ============================================================================
 
 // Verifica se uma string está no array (usando contador manual)
 function ContainsString(const Arr: array of String; Count: Integer; const Val: String): Boolean;
@@ -32,10 +29,6 @@ function IsStateFinal(const A: TAutomaton; const state: String): Boolean;
 begin
   IsStateFinal := ContainsString(A.finalStates, A.countFinal, state);
 end;
-
-// ============================================================================
-// LÓGICA DE SIMULAÇÃO
-// ============================================================================
 
 function IsWordAccepted(var A: TAutomaton; const word: String; var reason: String): Boolean;
 var
@@ -155,9 +148,6 @@ begin
   IsWordAccepted := False;
 end;
 
-// ============================================================================
-// INTERFACE DE TESTE
-// ============================================================================
 procedure TestWords(var A: TAutomaton);
 var
   word: String;
@@ -171,10 +161,11 @@ begin
 
   writeln;
   writeln('----- TESTE UMA PALAVRA -----');
-  writeln('Digite "sair" para retornar ao menu.');
+
 
   while True do
   begin
+    writeln('Digite "sair" para retornar ao menu.');
     write('Digite a palavra: ');
     readln(word);
 

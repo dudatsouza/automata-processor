@@ -10,6 +10,7 @@ var
 
 procedure ClassifyAutomaton(var A: TAutomaton);
 procedure StandardizeTransitions(var A: TAutomaton);
+procedure RemoveUnreachableStates(var A: TAutomaton);
 function ContainsEpsilon(var A: TAutomaton): Boolean;
 function IsDeterministic(var A: TAutomaton): Boolean;
 function IsMinimizedAFD(var A: TAutomaton): Boolean;
@@ -173,7 +174,9 @@ begin
     Exit;
   end;
 
-  // Verificar se existe algum estado q não é alcansável (usanmos aq BFS)
+  // Verificar se existe algum estado q não é alcancável (usanmos aq BFS)
+  // Verificar se tem estado inalcançável, e removê-lo
+  RemoveUnreachableStates(A);
   for i := 0 to A.countStates - 1 do Reachable[i] := False;
   
   qStart := 0; 
@@ -382,6 +385,7 @@ var
   end;
 
 begin
+
   // Identificar estado inalcancavel (bfs)
   
   // Inicializa tudo como falso
@@ -432,6 +436,9 @@ begin
   // Se o número de alcançáveis for igual ao total, não precisa fazer nada
   if qEnd = A.countStates then Exit;
 
+
+  writeln('Encontrado um estado inalcancavel');
+
   // Remover essas transiçoesn "mortas"
   // Mantemos apenas transições onde a ORIGEM é um estado alcançável.
   // (Se a origem é inalcançável, a transição é inútil).
@@ -479,9 +486,6 @@ end;
 // Classificação do Autômato
 procedure ClassifyAutomaton(var A: TAutomaton);
 begin
-
-  // Verificar se tem estado inalcançável, e removê-lo
-  RemoveUnreachableStates(A);
 
   // Verificar se tem mais de um estado inicial
   if A.countInitial > 1 then

@@ -118,7 +118,6 @@ begin
         if (A.transitions[j].source = intermediateState) and (A.transitions[j].symbol <> '') then
         begin
           // Temos: p --a--> r (r = target original)
-          // Agora calculamos o fecho de 'r' para achar os 's' finais
           
           for k := 0 to MAX_STATES do targetClosure[k] := False;
           ComputeEpsilonClosure(A.transitions[j].target, A, targetClosure);
@@ -163,10 +162,8 @@ begin
       end;
     end;
 
-    // ========================================================
-    // Passo 3: Recalcular Estados Finais
+    // Recalcular Estados Finais
     // Se o fecho de 'q' alcança um final original, 'q' vira final
-    // ========================================================
     isFinal := False;
     for i := 0 to A.countStates - 1 do
     begin
@@ -187,9 +184,7 @@ begin
     end;
   end;
 
-  // ========================================================
-  // Passo 4: Aplicar alterações no Objeto Principal (Cópia de volta)
-  // ========================================================
+  // Aplicar alterações no Objeto Principal (Cópia de volta)
   
   // 4.1 Substituir Transições
   A.countTransitions := tempTransCount;

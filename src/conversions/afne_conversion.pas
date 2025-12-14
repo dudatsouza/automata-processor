@@ -120,7 +120,7 @@ begin
     // Adiciona nova transição
     A.transitions[A.countTransitions].source := newInitial;
     A.transitions[A.countTransitions].target := A.initialState[i];
-    A.transitions[A.countTransitions].symbol := 'ε'; 
+    A.transitions[A.countTransitions].symbol := ''; 
     Inc(A.countTransitions); 
   end;
 
@@ -161,10 +161,31 @@ begin
   // Reclassificar o automato
   ClassifyAutomaton(A);
 
-  if A.classification = 'AFN-E' then
+  if (A.classification = 'AFN-E') or (A.classification = 'AFN') or (A.classification = 'AFD') or (A.classification = 'AFD-MINIMO') then
   begin
-    writeln('>> Conversao Multi-Inicial para AFN-E executada com sucesso!');
-    SaveAutomatonJSON('./data/output/AFN_multiinicial_conertido.json', A);
+    writeln('>> Conversao Multi para AFN-E executada com sucesso!');
+    
+    // Verifica classificações mais específicas e salva com o nome apropriado
+    if A.classification = 'AFD-MINIMO' then
+    begin
+      writeln('   (Nota: O classificador identificou que o automato resultante ja eh AFD MINIMO!)');
+      SaveAutomatonJSON('./data/output/MULTI_para_AFD_MINIMO.json', A);
+    end
+    else if A.classification = 'AFD' then
+    begin
+      writeln('   (Nota: O classificador identificou que o automato resultante ja eh AFD.)');
+      SaveAutomatonJSON('./data/output/MULTI_E_para_AFD.json', A);
+    end
+    else if A.classification = 'AFN' then
+    begin
+      writeln('   (Nota: O classificador identificou que o automato resultante ja eh AFN.)');
+      SaveAutomatonJSON('./data/output/MULTI_E_para_AFN.json', A);
+    end
+    else
+    begin
+      // Caso padrão: AFN
+      SaveAutomatonJSON('./data/output/AFN_multiinicial_conertido.json', A);
+    end;
   end
   else
   begin

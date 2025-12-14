@@ -9,10 +9,6 @@ procedure ConvertAFNToAFD(var A: TAutomaton);
 
 implementation
 
-// ============================================================================
-// FUNÇÕES AUXILIARES (Estilo Pascal Puro / Estático)
-// ============================================================================
-
 // Verifica se string existe no array (Busca Linear)
 function ArrayContains(const Arr: array of String; Count: Integer; const Val: String): Boolean;
 var
@@ -110,9 +106,6 @@ begin
   ArrayToString := res;
 end;
 
-// ============================================================================
-// ALGORITMO PRINCIPAL
-// ============================================================================
 
 procedure ConvertAFNToAFD(var A: TAutomaton);
 var

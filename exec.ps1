@@ -32,7 +32,7 @@ Write-Host "Compilando projeto..."
 # Recria pasta bin
 New-Item -ItemType Directory -Path $BIN -Force | Out-Null
 
-$CMD = "fpc -Fusrc -Fusrc/core -Fusrc/conversions `"$MAIN`" -o`"$EXE`""
+$CMD = "fpc -Fusrc -Fusrc/core -Fusrc/conversions -Fusrc/tests `"$MAIN`" -o`"$EXE`""
 
 Write-Host "Executando: $CMD"
 Invoke-Expression $CMD

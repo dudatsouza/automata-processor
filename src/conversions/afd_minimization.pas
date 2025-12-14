@@ -9,10 +9,6 @@ procedure MinimizeAFD(var A: TAutomaton);
 
 implementation
 
-// =============================================================
-// FUNÇÕES AUXILIARES DE BUSCA E VERIFICAÇÃO
-// =============================================================
-
 function IndexOfState(const A: TAutomaton; const state: String): Integer;
 var
   i: Integer;
@@ -66,9 +62,6 @@ begin
     end;
 end;
 
-// =============================================================
-// PROCEDIMENTOS DE MANIPULAÇÃO DO AUTÔMATO
-// =============================================================
 
 procedure AddTransition(var A: TAutomaton; const source, symbol, target: String);
 begin
@@ -172,9 +165,6 @@ begin
     end;
 end;
 
-// =============================================================
-// ALGORITMO PRINCIPAL DE MINIMIZAÇÃO
-// =============================================================
 
 procedure MinimizeAFD(var A: TAutomaton);
 var
