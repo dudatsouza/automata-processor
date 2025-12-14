@@ -3,7 +3,7 @@ unit afn_afd_conversion;
 interface
 
 uses
-  sysutils, automaton, utils, io;
+  automaton, utils, io;
 
 procedure ConvertAFNToAFD(var A: TAutomaton);
 

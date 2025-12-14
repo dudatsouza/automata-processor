@@ -139,10 +139,6 @@ Esse encadeamento reflete diretamente as equivalências formais demonstradas na 
 
 </details>
 
-
-
-
-
 ###
 <details> 
   <summary>
@@ -263,11 +259,193 @@ O estado inicial é sempre escrito como um **conjunto**, mesmo quando unitário,
 </details>
 
 
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 📎 utils.pas </b>
+  </summary> 
+
+Este módulo implementa **funções auxiliares de análise formal de autômatos**, sendo responsável por **classificar o tipo do autômato** e por verificar propriedades fundamentais utilizadas no fluxo de conversão do projeto.
+
+Os algoritmos aqui implementados não realizam transformações estruturais no autômato, mas avaliam suas características formais de acordo com definições clássicas da Teoria de Linguagens Formais.
+
+
+#### Função no projeto
+
+O [`utils.pas`](src/core/utils.pas) atua como:
+
+* classificador do tipo do autômato (AFN, AFN-ε, AFD, AFD mínimo);
+* verificador de propriedades formais;
+* módulo de apoio à tomada de decisão no fluxo principal do programa;
+* ferramenta de inspeção e depuração do autômato atual.
+
+As informações produzidas por este módulo determinam **quais conversões são teoricamente válidas** em cada etapa da execução.
+
+
+#### Propriedades verificadas
+
+O módulo implementa as seguintes verificações:
+
+##### **Presença de ε-transições**
+
+A função [`ContainsEpsilon`](src/core/utils.pas#L20) identifica transições rotuladas com ε (incluindo representações como `'ε'`, `'λ'` ou string vazia), caracterizando um **AFN-ε**.
+
+📚 Fundamentação: definição clássica de autômatos com transições vazias.
+
+
+##### **Determinismo**
+
+A função [`IsDeterministic`](src/core/utils.pas#L40) verifica se o autômato satisfaz as condições de um **AFD**, exigindo:
+
+* exatamente um estado inicial;
+* ausência de transições ε;
+* no máximo uma transição para cada par (estado, símbolo).
+
+Essa verificação corresponde diretamente à definição formal da função de transição:
+
+$$
+\delta : Q \times \Sigma \rightarrow Q
+$$
+
+##### **Minimalidade de AFD**
+
+A função [`IsMinimizedAFD`](src/core/utils.pas#L86) verifica se um AFD é **mínimo**, utilizando dois critérios clássicos:
+
+1. **Inexistência de estados inalcançáveis**, verificada por meio de uma busca em largura (BFS);
+2. **Inexistência de estados equivalentes**, verificada pelo **algoritmo da tabela de distinguibilidade** (*table-filling algorithm*).
+
+O algoritmo marca pares de estados distinguíveis com base em:
+
+* diferença entre estados finais e não-finais;
+* comportamento distinto sob os símbolos do alfabeto;
+* propagação das distinções até a estabilização da tabela.
+
+Esse método é canônico na literatura e corresponde ao procedimento clássico de minimização de autômatos determinísticos.
+
+> Observação: o algoritmo considera AFDs possivelmente incompletos, ou seja, sem estado poço explícito.
+
+
+#### Classificação do autômato
+
+A função [`ClassifyAutomaton`](src/core/utils.pas#L338) determina o tipo do autômato seguindo a hierarquia:
+
+1. multi-inicial;
+2. AFN-ε;
+3. AFD ou AFD mínimo;
+4. AFN.
+
+Essa classificação reflete diretamente as **relações de generalização e conversão** estudadas na teoria de autômatos.
+
+#### Mostrar Autômato Atual
+A função [`ShowAutomatonDetails`](src/core/utils.pas#L290) é uma função auxiliar do projeto para mostrar ao usuário o autômato atual.
+
+</details>
+
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 🖇️ afne_conversion.pas </b>
+  </summary> 
+
+Este módulo implementa a **conversão de autômatos multi-iniciais para autômatos com transições ε (AFN-ε)**, normalizando a estrutura do autômato para que ele possua **exatamente um estado inicial**.
+
+A conversão preserva a linguagem reconhecida pelo autômato e constitui um passo fundamental no encadeamento clássico de conversões estudado na Teoria de Linguagens Formais.
+
+
+#### Função no projeto
+
+O [`afne_conversion.pas`](src/conversions/afne_conversion.pas) atua como:
+
+* normalizador estrutural de autômatos multi-iniciais;
+* etapa preparatória para conversões posteriores;
+* garantidor da existência de um único estado inicial;
+* facilitador da aplicação de algoritmos clássicos sobre AFNs.
+
+Esse módulo é acionado automaticamente sempre que um autômato multi-inicial precisa ser convertido para um modelo canônico.
+
+
+#### Método teórico aplicado
+
+Dado um autômato com múltiplos estados iniciais:
+
+$$
+I = {q_1, q_2, \dots, q_n}
+$$
+
+o algoritmo aplica o procedimento clássico:
+
+1. Cria um novo estado inicial ( $q_0$ );
+2. Adiciona transições ε de ( $q_0$ ) para cada ( $q_i \in I $);
+3. Define o conjunto de estados iniciais como ( $I = {q_0}$ ).
+
+Formalmente, a nova função de transição satisfaz:
+
+$$
+\delta(q_0, \varepsilon) = I
+$$
+
+Esse procedimento garante que o novo autômato reconheça **exatamente a mesma linguagem** do autômato original.
+
+
+#### Detalhes de implementação
+
+A implementação cuida de aspectos práticos relevantes:
+
+* prevenção de conflitos de nomes ao criar o novo estado inicial;
+* renomeação consistente de estados em todas as estruturas internas;
+* verificação de limites de memória (arrays estáticos);
+* reclassificação automática do autômato após a conversão.
+
+Esses cuidados garantem a integridade estrutural do autômato ao longo de todo o fluxo do programa.
+
+</details>
 
 
 
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 🖇️ afne_afn_conversion.pas </b>
+  </summary> 
 
 
+
+</details>
+
+
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 🖇️ afn_afd_conversion.pas </b>
+  </summary> 
+
+
+
+</details>
+
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 🖇️ afd_minimization.pas </b>
+  </summary> 
+
+
+
+</details>
+
+
+###
+<details> 
+  <summary>
+    <b style='font-size: 16px'> 🔎 words_test.pas </b>
+  </summary> 
+
+
+
+</details>
 
 
 </details>
@@ -281,7 +459,7 @@ O estado inicial é sempre escrito como um **conjunto**, mesmo quando unitário,
 
 
 
-## 🔎 Resumo das Conversões
+## 📖 Resumo das Conversões
 
 ### 🟦 AFN → AFD (Método do Subconjunto)
 O método constrói um AFD onde **cada estado representa um conjunto de estados do AFN**.  

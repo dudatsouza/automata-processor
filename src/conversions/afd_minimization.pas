@@ -3,7 +3,7 @@ unit afd_minimization;
 interface
 
 uses
-  sysutils, automaton, utils, io;
+  automaton, utils, io;
 
 procedure MinimizeAFD(var A: TAutomaton);
 

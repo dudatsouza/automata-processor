@@ -3,15 +3,12 @@ unit afne_afn_conversion;
 interface
 
 uses
-  sysutils, automaton, utils, io;
+  automaton, utils, io;
 
 procedure ConvertAFNEToAFN(var A: TAutomaton);
 
 implementation
 
-// ------------------------------------------------------------
-// Calcula o epsilon-fecho (Estados alcançáveis apenas com epsilon)
-// ------------------------------------------------------------
 procedure ComputeEpsilonClosure(const state: String; const A: TAutomaton; var closure: array of boolean);
 var
   i, sIndex: Integer;
@@ -40,9 +37,6 @@ begin
   end;
 end;
 
-// ------------------------------------------------------------
-// Verifica se um estado é Final no autômato original
-// ------------------------------------------------------------
 function IsStateFinal(const A: TAutomaton; stateName: String): Boolean;
 var
   i: Integer;
@@ -56,9 +50,6 @@ begin
     end;
 end;
 
-// ------------------------------------------------------------
-// Verifica se uma string já existe num array (evita duplicação)
-// ------------------------------------------------------------
 function StringExistsInArray(const list: array of String; const count: Integer; const value: String): Boolean;
 var
   i: Integer;
@@ -72,9 +63,6 @@ begin
     end;
 end;
 
-// ------------------------------------------------------------
-// Procedimento Principal
-// ------------------------------------------------------------
 procedure ConvertAFNEToAFN(var A: TAutomaton);
 var
   // Iteradores
