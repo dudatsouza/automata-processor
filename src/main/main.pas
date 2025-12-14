@@ -2,8 +2,7 @@ program Main;
 
 uses
     io, automaton, afne_conversion, afne_afn_conversion, afn_afd_conversion,
-    afd_minimization, words_test, utils,
-    Crt;
+    afd_minimization, words_test, utils, Crt;
 
 var
     AutomatonObj: TAutomaton;

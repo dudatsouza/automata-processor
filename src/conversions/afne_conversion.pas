@@ -3,60 +3,145 @@ unit afne_conversion;
 interface
 
 uses
-  automaton, io;
+  automaton, utils, sysutils; 
 
 procedure ConvertMultiInitialToAFNE(var A: TAutomaton);
 
 implementation
 
+// Verifica se estado existe usando os contadores manuais
+function StateExists(const A: TAutomaton; stateName: String): Boolean;
+var
+  i: Integer;
+begin
+  StateExists := False;
+  // Loop de 0 até count - 1 (Pascal Puro)
+  for i := 0 to A.countStates - 1 do
+  begin
+    if A.states[i] = stateName then
+    begin
+      StateExists := True;
+      Exit;
+    end;
+  end;
+end;
+
+// Renomeia estados em todas as listas estáticas
+procedure RenameState(var A: TAutomaton; oldName, newName: String);
+var
+  i: Integer;
+begin
+  // 1. Atualizar lista de estados
+  for i := 0 to A.countStates - 1 do
+    if A.states[i] = oldName then
+      A.states[i] := newName;
+
+  // 2. Atualizar transições (origem e destino)
+  for i := 0 to A.countTransitions - 1 do
+  begin
+    if A.transitions[i].source = oldName then
+      A.transitions[i].source := newName;
+    if A.transitions[i].target = oldName then
+      A.transitions[i].target := newName;
+  end;
+
+  // 3. Atualizar estados finais
+  for i := 0 to A.countFinal - 1 do
+    if A.finalStates[i] = oldName then
+      A.finalStates[i] := newName;
+
+  // 4. Atualizar estados iniciais
+  for i := 0 to A.countInitial - 1 do
+    if A.initialState[i] = oldName then
+      A.initialState[i] := newName;
+end;
+
+// Garante que 'targetName' esteja livre
+procedure EnsureNameIsAvailable(var A: TAutomaton; targetName: String; backupPrefix: String);
+var
+  k: Integer;
+  safeName: String;
+begin
+  if not StateExists(A, targetName) then
+    Exit;
+
+  k := 1; 
+  repeat
+    safeName := backupPrefix + IntToStr(k);
+    
+    if safeName = targetName then 
+    begin
+       Inc(k);
+       Continue;
+    end;
+
+    if StateExists(A, safeName) then
+    begin
+      Inc(k);
+      Continue;
+    end;
+    
+    // Encontrou livre
+    Break; 
+  until False;
+
+  writeln('>> Conflito: O estado "', targetName, '" ja existe. Renomeando para "', safeName, '"...');
+  RenameState(A, targetName, safeName);
+end;
+
 procedure ConvertMultiInitialToAFNE(var A: TAutomaton);
 var
-  i, pos: Integer;
-  newInitial: AnsiString;
-  newTransitions: array of TTransition;
+  i: Integer;
+  newInitial: String;
 begin
-  // Apenas converte se houver mais de 1 estado inicial
-  if Length(A.initialState) <= 1 then
+  // 1. Validação: Só converte se tiver > 1 inicial
+  if A.countInitial <= 1 then
     Exit;
 
   writeln('>> Convertendo automato Multi-Inicial para AFN-E...');
 
-  // Nome fixo para novo estado inicial unificado
+  // 2. Preparação: Garantir que 'q0' esteja livre
+  EnsureNameIsAvailable(A, 'q0', 'q');
+  
   newInitial := 'q0';
 
-  // Criar novo vetor de transições:
-  // todas as transições antigas + ε-transições para cada estado inicial antigo
-  SetLength(newTransitions, Length(A.transitions) + Length(A.initialState));
-
-  // Copiar transições anteriores
-  for i := 0 to High(A.transitions) do
-    newTransitions[i] := A.transitions[i];
-
-  // Criar transições ε do novo estado inicial para cada antigo
-  pos := Length(A.transitions);
-  for i := 0 to High(A.initialState) do
+  // 3. Criar transições epsilon do novo q0 para os iniciais antigos
+  // Em vez de SetLength, adicionamos ao fim do array estático
+  for i := 0 to A.countInitial - 1 do
   begin
-    newTransitions[pos].source := newInitial;
-    newTransitions[pos].target := A.initialState[i];
-    newTransitions[pos].symbol := 'ε';
-    Inc(pos);
+    // Verifica overflow do array estático
+    if A.countTransitions >= MAX_TRANSITIONS then
+    begin
+      writeln('ERRO CRITICO: Limite de transicoes atingido ao criar epsilons.');
+      Break; 
+    end;
+
+    // Adiciona nova transição
+    A.transitions[A.countTransitions].source := newInitial;
+    A.transitions[A.countTransitions].target := A.initialState[i];
+    A.transitions[A.countTransitions].symbol := 'ε'; 
+    Inc(A.countTransitions); // Incrementa contador manual
   end;
 
-  // Substituir transições
-  A.transitions := newTransitions;
+  // 4. Registrar o novo estado na lista de estados
+  if not StateExists(A, newInitial) then
+  begin
+    if A.countStates < MAX_STATES then
+    begin
+      A.states[A.countStates] := newInitial;
+      Inc(A.countStates);
+    end;
+  end;
 
-  // Substituir estados iniciais por apenas o novo estado
-  SetLength(A.initialState, 1);
+  // 5. Atualizar o estado inicial único
+  // O array initialState é estático, mas logicamente agora só tem 1 elemento
   A.initialState[0] := newInitial;
+  A.countInitial := 1;
 
-  // Adicionar novo estado no conjunto
-  SetLength(A.states, Length(A.states) + 1);
-  A.states[High(A.states)] := newInitial;
+  // 6. Reclassificar
+  ClassifyAutomaton(A); 
 
-  // Atualizar classificação
-  A.classification := 'AFN-E';
-
-  writeln('>> Conversao Multi-Inicial para AFN-E executada com sucesso!');
+  writeln('>> Conversao concluida! Novo estado inicial unificado: ', newInitial);
 end;
 
 end.

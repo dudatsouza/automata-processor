@@ -1,6 +1,6 @@
 unit io;
 
-{$mode objfpc}{$H+}
+{$mode objfpc}{$H+} 
 
 interface
 
@@ -20,7 +20,7 @@ type
 function ReadJSON(const FilePath: string): TAutomatonData;
 function ConvertTAutomatonData(const Data: TAutomatonData): TAutomaton;
 procedure WriteResult(const FilePath: string; const Text: string);
-procedure SaveAutomatonJSON(const FilePath: string; var A: TAutomaton);
+procedure SaveAutomatonJSON(const FilePath: string; const A: TAutomaton);
 
 implementation
 
@@ -67,7 +67,6 @@ begin
         Result.FinalStates[i] := Strings[i];
     end;
 
-    // Guardar as transições completas (array de objetos)
     Result.Transitions := Obj.Arrays['transicoes'].Clone as TJSONArray;
   finally
     InputFile.Free;
@@ -80,34 +79,49 @@ var
   i: Integer;
   Obj: TJSONObject;
 begin
-  // Converter arrays simples
-  SetLength(Result.alphabet, Length(Data.Alphabet));
-  for i := 0 to High(Data.Alphabet) do
-    Result.alphabet[i] := Data.Alphabet[i];
+  Result.countStates := 0;
+  Result.countAlphabet := 0;
+  Result.countFinal := 0;
+  Result.countInitial := 0;
+  Result.countTransitions := 0;
+  Result.classification := '';
 
-  SetLength(Result.states, Length(Data.States));
-  for i := 0 to High(Data.States) do
-    Result.states[i] := Data.States[i];
-
-  SetLength(Result.finalStates, Length(Data.FinalStates));
-  for i := 0 to High(Data.FinalStates) do
-    Result.finalStates[i] := Data.FinalStates[i];
-
-  // Converter estado inicial (que era string) para array
-  SetLength(Result.initialState, 1);
-  Result.initialState[0] := Data.InitialState;
-
-  // Transições
-  SetLength(Result.transitions, Data.Transitions.Count);
-  for i := 0 to Data.Transitions.Count - 1 do
+  for i := 0 to Length(Data.States) - 1 do
   begin
-    Obj := Data.Transitions.Objects[i];
-    Result.transitions[i].source := Obj.Get('origem', '');
-    Result.transitions[i].target := Obj.Get('destino', '');
-    Result.transitions[i].symbol := Obj.Get('simbolo', '');
+    if Result.countStates >= MAX_STATES then Break;
+    Result.states[Result.countStates] := Data.States[i];
+    Inc(Result.countStates);
   end;
 
-  Result.classification := '';
+  for i := 0 to Length(Data.Alphabet) - 1 do
+  begin
+    if Result.countAlphabet >= MAX_ALPHABET then Break;
+    Result.alphabet[Result.countAlphabet] := Data.Alphabet[i];
+    Inc(Result.countAlphabet);
+  end;
+
+  for i := 0 to Length(Data.FinalStates) - 1 do
+  begin
+    if Result.countFinal >= MAX_FINAL_STATES then Break;
+    Result.finalStates[Result.countFinal] := Data.FinalStates[i];
+    Inc(Result.countFinal);
+  end;
+
+  if Data.InitialState <> '' then
+  begin
+    Result.initialState[0] := Data.InitialState;
+    Result.countInitial := 1;
+  end;
+
+  for i := 0 to Data.Transitions.Count - 1 do
+  begin
+    if Result.countTransitions >= MAX_TRANSITIONS then Break;
+    Obj := Data.Transitions.Objects[i];
+    Result.transitions[Result.countTransitions].source := Obj.Get('origem', '');
+    Result.transitions[Result.countTransitions].target := Obj.Get('destino', '');
+    Result.transitions[Result.countTransitions].symbol := Obj.Get('simbolo', '');
+    Inc(Result.countTransitions);
+  end;
 end;
 
 procedure WriteResult(const FilePath: string; const Text: string);
@@ -121,60 +135,89 @@ begin
   WriteLn('Resultado salvo em: ', FilePath);
 end;
 
-procedure SaveAutomatonJSON(const FilePath: string; var A: TAutomaton);
+// ============================================================================
+// NOVA VERSÃO: Escrita Manual para Formatação Bonita (Pretty Print)
+// ============================================================================
+procedure SaveAutomatonJSON(const FilePath: string; const A: TAutomaton);
 var
-  JsonObj: TJSONObject;
-  AlphabetArray, StatesArray, FinalStatesArray, InitialStateArray, TransitionsArray: TJSONArray;
-  TransObj: TJSONObject;
-  i: Integer;
   OutputFile: TextFile;
+  i: Integer;
 begin
-  JsonObj := TJSONObject.Create;
-  try
-    JsonObj.Add('nome', 'Automato_' + A.classification);
+  AssignFile(OutputFile, FilePath);
+  Rewrite(OutputFile);
 
-    AlphabetArray := TJSONArray.Create;
-    for i := 0 to High(A.alphabet) do
-      AlphabetArray.Add(A.alphabet[i]);
-    JsonObj.Add('alfabeto', AlphabetArray);
+  // Abertura do JSON
+  WriteLn(OutputFile, '{');
+  
+  // Nome
+  WriteLn(OutputFile, '  "nome" : "Automato_' + A.classification + '",');
+  WriteLn(OutputFile, ''); // Linha em branco para separar
 
-    StatesArray := TJSONArray.Create;
-    for i := 0 to High(A.states) do
-      StatesArray.Add(A.states[i]);
-    JsonObj.Add('estados', StatesArray);
-
-    FinalStatesArray := TJSONArray.Create;
-    for i := 0 to High(A.finalStates) do
-      FinalStatesArray.Add(A.finalStates[i]);
-    JsonObj.Add('estados_finais', FinalStatesArray);
-
-    InitialStateArray := TJSONArray.Create;
-    for i := 0 to High(A.initialState) do
-      InitialStateArray.Add(A.initialState[i]);
-    JsonObj.Add('estado_inicial', InitialStateArray);
-
-    TransitionsArray := TJSONArray.Create;
-    for i := 0 to High(A.transitions) do
-    begin
-      TransObj := TJSONObject.Create;
-      TransObj.Add('origem', A.transitions[i].source);
-      TransObj.Add('destino', A.transitions[i].target);
-      TransObj.Add('simbolo', A.transitions[i].symbol);
-      TransitionsArray.Add(TransObj);
-    end;
-    JsonObj.Add('transicoes', TransitionsArray);
-
-    AssignFile(OutputFile, FilePath);
-    Rewrite(OutputFile);
-    WriteLn(OutputFile, JsonObj.AsJSON);
-    CloseFile(OutputFile);
-
-    WriteLn;
-    WriteLn('>> Automato ', A.classification, ' salvo em: ', FilePath);
-    WriteLn;
-  finally
-    JsonObj.Free;
+  // --- Alfabeto ---
+  Write(OutputFile, '  "alfabeto" : [');
+  for i := 0 to A.countAlphabet - 1 do
+  begin
+    Write(OutputFile, '"' + A.alphabet[i] + '"');
+    if i < A.countAlphabet - 1 then Write(OutputFile, ', ');
   end;
+  WriteLn(OutputFile, '],');
+
+  // --- Estados ---
+  Write(OutputFile, '  "estados" : [');
+  for i := 0 to A.countStates - 1 do
+  begin
+    Write(OutputFile, '"' + A.states[i] + '"');
+    if i < A.countStates - 1 then Write(OutputFile, ', ');
+  end;
+  WriteLn(OutputFile, '],');
+
+  // --- Estados Finais ---
+  Write(OutputFile, '  "estados_finais" : [');
+  for i := 0 to A.countFinal - 1 do
+  begin
+    Write(OutputFile, '"' + A.finalStates[i] + '"');
+    if i < A.countFinal - 1 then Write(OutputFile, ', ');
+  end;
+  WriteLn(OutputFile, '],');
+
+  // --- Estado Inicial ---
+  Write(OutputFile, '  "estado_inicial" : [');
+  for i := 0 to A.countInitial - 1 do
+  begin
+    Write(OutputFile, '"' + A.initialState[i] + '"');
+    if i < A.countInitial - 1 then Write(OutputFile, ', ');
+  end;
+  WriteLn(OutputFile, '],');
+  WriteLn(OutputFile, '');
+
+  // --- Transições (Formatadas linha a linha) ---
+  WriteLn(OutputFile, '  "transicoes" : [');
+  
+  for i := 0 to A.countTransitions - 1 do
+  begin
+    Write(OutputFile, '    { ');
+    Write(OutputFile, '"origem" : "' + A.transitions[i].source + '", ');
+    Write(OutputFile, '"destino" : "' + A.transitions[i].target + '", ');
+    Write(OutputFile, '"simbolo" : "' + A.transitions[i].symbol + '"');
+    Write(OutputFile, ' }');
+
+    // Se não for a última, coloca vírgula e pula linha
+    if i < A.countTransitions - 1 then
+      WriteLn(OutputFile, ',')
+    else
+      WriteLn(OutputFile, ''); // Última não tem vírgula
+  end;
+  
+  WriteLn(OutputFile, '  ]');
+  
+  // Fechamento do JSON
+  WriteLn(OutputFile, '}');
+
+  CloseFile(OutputFile);
+
+  WriteLn;
+  WriteLn('>> Automato ', A.classification, ' salvo em: ', FilePath);
+  WriteLn;
 end;
 
 end.

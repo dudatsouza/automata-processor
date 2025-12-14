@@ -8,14 +8,11 @@
     { "origem": "q0", "destino": "q1", "simbolo": "b" },
     { "origem": "q1", "destino": "q0", "simbolo": "b" },
     { "origem": "q1", "destino": "q1", "simbolo": "a" },
-
     { "origem": "q0", "destino": "q2", "simbolo": "a" },
-
     { "origem": "q2", "destino": "q5", "simbolo": "b" },
     { "origem": "q5", "destino": "q3", "simbolo": "b" },
     { "origem": "q3", "destino": "q4", "simbolo": "b" },
     { "origem": "q4", "destino": "q2", "simbolo": "b" },
-
     { "origem": "q2", "destino": "q4", "simbolo": "a" },
     { "origem": "q4", "destino": "q3", "simbolo": "a" },
     { "origem": "q3", "destino": "q5", "simbolo": "a" },

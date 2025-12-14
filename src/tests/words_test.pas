@@ -3,75 +3,67 @@ unit words_test;
 interface
 
 uses
-  SysUtils, Classes, automaton;
+  automaton; 
 
 procedure TestWords(var A: TAutomaton);
 
 implementation
 
-type
-  TStringArray = array of AnsiString;
+// ============================================================================
+// FUNÇÕES AUXILIARES LOCAIS (Estáticas)
+// ============================================================================
 
-function ContainsString(const Arr: TStringArray; const S: AnsiString): Boolean;
+// Verifica se uma string está no array (usando contador manual)
+function ContainsString(const Arr: array of String; Count: Integer; const Val: String): Boolean;
 var
   i: Integer;
 begin
-  for i := 0 to High(Arr) do
-    if Arr[i] = S then
+  ContainsString := False;
+  for i := 0 to Count - 1 do
+    if Arr[i] = Val then
     begin
       ContainsString := True;
       Exit;
     end;
-  ContainsString := False;
 end;
 
-function IndexInArray(const Arr: TStringArray; const S: AnsiString): Integer;
-var
-  i: Integer;
+// Verifica se é estado final
+function IsStateFinal(const A: TAutomaton; const state: String): Boolean;
 begin
-  for i := 0 to High(Arr) do
-    if Arr[i] = S then
-    begin
-      IndexInArray := i;
-      Exit;
-    end;
-  IndexInArray := -1;
+  IsStateFinal := ContainsString(A.finalStates, A.countFinal, state);
 end;
 
-function UniqueAdd(var Arr: TStringArray; const S: AnsiString): Integer;
+// ============================================================================
+// LÓGICA DE SIMULAÇÃO
+// ============================================================================
+
+function IsWordAccepted(var A: TAutomaton; const word: String; var reason: String): Boolean;
 var
-  idx: Integer;
-begin
-  idx := IndexInArray(Arr, S);
-  if idx >= 0 then
-  begin
-    UniqueAdd := idx;
-    Exit;
-  end;
-
-  idx := Length(Arr);
-  SetLength(Arr, idx + 1);
-  Arr[idx] := S;
-
-  UniqueAdd := idx;
-end;
-
-function IsWordAccepted(var A: TAutomaton; const word: AnsiString; var reason: AnsiString): Boolean;
-var
-  currentStates, nextStates: TStringArray;
+  // Buffers estáticos para simular o conjunto de estados ativos
+  currentStates: array[0..MAX_STATES] of String;
+  countCurrent: Integer;
+  
+  nextStates: array[0..MAX_STATES] of String;
+  countNext: Integer;
+  
   i, j, t: Integer;
-  ch: AnsiString;
+  ch: String; // String, pois o símbolo no autômato é String
 begin
   reason := '';
 
-  SetLength(currentStates, Length(A.initialState));
-  for i := 0 to High(A.initialState) do
-    currentStates[i] := A.initialState[i];
+  // 1. Inicializa estados atuais com os estados iniciais
+  countCurrent := 0;
+  for i := 0 to A.countInitial - 1 do
+  begin
+    currentStates[countCurrent] := A.initialState[i];
+    Inc(countCurrent);
+  end;
 
+  // 2. Caso especial: Palavra Vazia
   if word = '' then
   begin
-    for i := 0 to High(currentStates) do
-      if ContainsString(A.finalStates, currentStates[i]) then
+    for i := 0 to countCurrent - 1 do
+      if IsStateFinal(A, currentStates[i]) then
       begin
         IsWordAccepted := True;
         Exit;
@@ -82,35 +74,53 @@ begin
     Exit;
   end;
 
+  // 3. Loop para cada caractere da palavra
   for i := 1 to Length(word) do
   begin
-    ch := word[i];
-    SetLength(nextStates, 0);
+    ch := word[i]; // Converte char para string automaticamente
+    countNext := 0; // Limpa o buffer de próximos estados
 
-    for j := 0 to High(currentStates) do
+    // Para cada estado atual (simula não-determinismo)
+    for j := 0 to countCurrent - 1 do
     begin
-      for t := 0 to High(A.transitions) do
+      // Procurar transições no autômato
+      for t := 0 to A.countTransitions - 1 do
       begin
+        // Verifica origem E símbolo
         if (A.transitions[t].source = currentStates[j]) and
            (A.transitions[t].symbol = ch) then
         begin
-          UniqueAdd(nextStates, A.transitions[t].target);
+          // Adiciona ao nextStates se ainda não estiver lá (evita duplicatas)
+          if not ContainsString(nextStates, countNext, A.transitions[t].target) then
+          begin
+            // Verificação de segurança de limite
+            if countNext < MAX_STATES then
+            begin
+              nextStates[countNext] := A.transitions[t].target;
+              Inc(countNext);
+            end;
+          end;
         end;
       end;
     end;
 
-    if Length(nextStates) = 0 then
+    // Se não houver estados seguintes, travou
+    if countNext = 0 then
     begin
-      reason := 'Nenhuma transicao encontrada para [' + ch + ']';
+      reason := 'Travou: Nenhuma transicao para [' + ch + ']';
       IsWordAccepted := False;
       Exit;
     end;
 
-    currentStates := nextStates;
+    // Avança: Current := Next
+    countCurrent := countNext;
+    for j := 0 to countNext - 1 do
+      currentStates[j] := nextStates[j];
   end;
 
-  for i := 0 to High(currentStates) do
-    if ContainsString(A.finalStates, currentStates[i]) then
+  // 4. Verifica se parou em algum estado final
+  for i := 0 to countCurrent - 1 do
+    if IsStateFinal(A, currentStates[i]) then
     begin
       IsWordAccepted := True;
       Exit;
@@ -120,18 +130,21 @@ begin
   IsWordAccepted := False;
 end;
 
+// ============================================================================
+// INTERFACE DE TESTE
+// ============================================================================
 procedure TestWords(var A: TAutomaton);
 var
-  word: AnsiString;
+  word: String;
   accepted: Boolean;
-  reason: AnsiString;
+  reason: String;
   i: Integer;
 begin
   writeln;
   writeln('========== TESTADOR DE PALAVRAS ==========');
 
   write('Alfabeto: { ');
-  for i := 0 to High(A.alphabet) do
+  for i := 0 to A.countAlphabet - 1 do
   begin
     if i > 0 then write(', ');
     write(A.alphabet[i]);
@@ -139,7 +152,7 @@ begin
   writeln(' }');
 
   write('Estados: { ');
-  for i := 0 to High(A.states) do
+  for i := 0 to A.countStates - 1 do
   begin
     if i > 0 then write(', ');
     write(A.states[i]);
@@ -147,7 +160,7 @@ begin
   writeln(' }');
 
   write('Estado(s) Inicial(is): { ');
-  for i := 0 to High(A.initialState) do
+  for i := 0 to A.countInitial - 1 do
   begin
     if i > 0 then write(', ');
     write(A.initialState[i]);
@@ -155,16 +168,15 @@ begin
   writeln(' }');
 
   write('Estado(s) Final(is): { ');
-
-    for i := 0 to High(A.finalStates) do
+  for i := 0 to A.countFinal - 1 do
   begin
     if i > 0 then write(', ');
     write(A.finalStates[i]);
   end;
   writeln(' }');
 
-  writeln('Transicoes:');
-  for i := 0 to High(A.transitions) do
+  writeln('Transicoes (Total: ', A.countTransitions, '):');
+  for i := 0 to A.countTransitions - 1 do
     writeln('  ', A.transitions[i].source, ' --[', A.transitions[i].symbol, ']--> ', A.transitions[i].target);
 
   writeln;
@@ -174,6 +186,7 @@ begin
   begin
     write('Digite a palavra: ');
     readln(word);
+
     if word = 'sair' then Exit;
 
     accepted := IsWordAccepted(A, word, reason);
@@ -188,4 +201,3 @@ begin
 end;
 
 end.
-

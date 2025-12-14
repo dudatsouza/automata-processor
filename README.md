@@ -47,21 +47,22 @@ A seguir está a estrutura geral do sistema, organizada por módulos:
 
 ```
 src/
- ├── core/
- │    ├── automaton.pas         # Estrutura base do autômato
- │    ├── io.pas                # Entrada e saída (JSON)
- │    └── utils.pas             # Funções auxiliares
- │
- ├── conversion/
- │    ├── afn_afd_conversion.pas      # Conversão AFN → AFD
- │    ├── afne_afn_conversion.pas     # Conversão AFN-ε → AFN
- │    ├── afne_conversion.pas         # Interpretação de AFN-ε
- │    └── afd_minimization.pas        # Minimização de AFD
- │
- ├── simulation/
- │    └── words_test.pas        # Algoritmo de simulação de palavras
- │
- └── main.pas                   # Execução principal
+├── core/
+│   ├── automaton.pas      # Estruturas e tipos do autômato
+│   ├── io.pas             # Leitura e escrita de arquivos JSON
+│   └── utils.pas          # Funções auxiliares
+│
+├── conversions/
+│   ├── afne_conversion.pas        # Tratamento de AFN-ε
+│   ├── afne_afn_conversion.pas    # Conversão AFN-ε → AFN
+│   ├── afn_afd_conversion.pas     # Conversão AFN → AFD
+│   └── afd_minimization.pas       # Minimização de AFD
+│
+├── tests/
+│   └── words_test.pas      # Simulação e teste de palavras no autômato
+│
+└── main/
+    └── main.pas            # Programa principal (menus e execução)
 ```
 
 

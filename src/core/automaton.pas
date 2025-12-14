@@ -2,22 +2,46 @@ unit automaton;
 
 interface
 
+const
+  // Definimos limites máximos fixos (alocação estática)
+  MAX_STATES = 500;
+  MAX_ALPHABET = 100;
+  MAX_TRANSITIONS = 5000;
+  MAX_FINAL_STATES = 500;
+  MAX_INITIAL_STATES = 50;
+
 type
-  // As transições usam AnsiString explicitamente
+  // Registro de Transição
   TTransition = record
-    source: AnsiString;
-    target: AnsiString;
-    symbol: AnsiString;
+    source: String; // String padrão (máx 255 chars)
+    target: String;
+    symbol: String;
   end;
 
-  // Todas as listas também precisam ser array of AnsiString
+  // Estrutura do Autômato usando Arrays Estáticos e Contadores
   TAutomaton = record
-    alphabet: array of AnsiString;
-    states: array of AnsiString;
-    finalStates: array of AnsiString;
-    initialState: array of AnsiString;
-    transitions: array of TTransition;
-    classification: AnsiString;
+    // Alfabeto
+    alphabet: array[0..MAX_ALPHABET] of String;
+    countAlphabet: Integer;
+
+    // Estados
+    states: array[0..MAX_STATES] of String;
+    countStates: Integer;
+
+    // Estados Finais
+    finalStates: array[0..MAX_FINAL_STATES] of String;
+    countFinal: Integer;
+
+    // Estado(s) Inicial(is)
+    initialState: array[0..MAX_INITIAL_STATES] of String;
+    countInitial: Integer;
+
+    // Transições
+    transitions: array[0..MAX_TRANSITIONS] of TTransition;
+    countTransitions: Integer;
+
+    // Classificação
+    classification: String;
   end;
 
 implementation

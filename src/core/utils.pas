@@ -3,7 +3,7 @@ unit utils;
 interface
 
 uses
-  SysUtils, automaton;
+  automaton;
 
 procedure ClassifyAutomaton(var A: TAutomaton);
 function ContainsEpsilon(var A: TAutomaton): Boolean;
@@ -15,31 +15,50 @@ function ContainsEpsilon(var A: TAutomaton): Boolean;
 var
   i: Integer;
 begin
-  for i := 0 to High(A.transitions) do
-    if (A.transitions[i].symbol = 'ε') or (A.transitions[i].symbol = '') then
+  ContainsEpsilon := False; // Pascal Puro: atribui ao nome da função
+
+  // Loop usa o contador manual, não Length()
+  for i := 0 to A.countTransitions - 1 do
+    if A.transitions[i].symbol = 'ε' then
     begin
       ContainsEpsilon := True;
       Exit;
     end;
-  ContainsEpsilon := False;
 end;
 
 function IsDeterministic(var A: TAutomaton): Boolean;
 var
   i, j, count: Integer;
 begin
-  for i := 0 to High(A.transitions) do
+  // Pré-condição: Verifica contador de estados iniciais
+  if A.countInitial <> 1 then
   begin
+    IsDeterministic := False;
+    Exit;
+  end;
+
+  // Percorre todas as transições para validar regras de AFD
+  for i := 0 to A.countTransitions - 1 do
+  begin
+    // 1. AFD não admite epsilon
     if A.transitions[i].symbol = 'ε' then
-      Continue;
+    begin
+      IsDeterministic := False;
+      Exit;
+    end;
 
+    // 2. Verifica se há ambiguidade (mesma origem, mesmo símbolo, destinos diferentes)
     count := 0;
-
-    for j := 0 to High(A.transitions) do
+    for j := 0 to A.countTransitions - 1 do
+    begin
       if (A.transitions[j].source = A.transitions[i].source) and
          (A.transitions[j].symbol = A.transitions[i].symbol) then
+      begin
         Inc(count);
+      end;
+    end;
 
+    // Se houver mais de 1 transição com mesmo símbolo saindo do mesmo estado
     if count > 1 then
     begin
       IsDeterministic := False;
@@ -52,7 +71,8 @@ end;
 
 procedure ClassifyAutomaton(var A: TAutomaton);
 begin
-  if Length(A.initialState) > 1 then
+  // Verifica contador de iniciais
+  if A.countInitial > 1 then
   begin
     A.classification := 'MULTI-INICIAL';
     Exit;

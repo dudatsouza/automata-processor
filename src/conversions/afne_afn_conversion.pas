@@ -3,143 +3,224 @@ unit afne_afn_conversion;
 interface
 
 uses
-  automaton, io;
+  automaton, io, sysutils, utils;
 
 procedure ConvertAFNEToAFN(var A: TAutomaton);
 
 implementation
 
 // ------------------------------------------------------------
-// Compute the epsilon-closure of a state
+// Calcula o epsilon-fecho (Estados alcançáveis apenas com epsilon)
 // ------------------------------------------------------------
-procedure ComputeEpsilonClosure(const state: AnsiString; var A: TAutomaton; var closure: array of boolean);
+procedure ComputeEpsilonClosure(const state: String; const A: TAutomaton; var closure: array of boolean);
 var
   i, sIndex: Integer;
 begin
-  // Find index of the state
+  // 1. Achar índice do estado na lista principal
   sIndex := -1;
-  for i := 0 to High(A.states) do
+  for i := 0 to A.countStates - 1 do
     if A.states[i] = state then
     begin
       sIndex := i;
-      break;
+      Break;
     end;
 
-  if sIndex = -1 then
+  // Se não achou ou já visitou, sai
+  if (sIndex = -1) or (closure[sIndex]) then
     Exit;
 
-  if closure[sIndex] then
-    Exit; // already visited
+  closure[sIndex] := True; // Marca como parte do fecho
 
-  closure[sIndex] := True;
-
-  // Explore epsilon transitions
-  for i := 0 to High(A.transitions) do
+  // 2. DFS recursiva para achar transições epsilon
+  for i := 0 to A.countTransitions - 1 do
   begin
+    // Procura transições saindo deste estado com simbolo epsilon
     if (A.transitions[i].source = state) and (A.transitions[i].symbol = 'ε') then
       ComputeEpsilonClosure(A.transitions[i].target, A, closure);
   end;
 end;
 
 // ------------------------------------------------------------
-// Convert AFN-e to AFN
+// Verifica se um estado é Final no autômato original
+// ------------------------------------------------------------
+function IsStateFinal(const A: TAutomaton; stateName: String): Boolean;
+var
+  i: Integer;
+begin
+  IsStateFinal := False;
+  for i := 0 to A.countFinal - 1 do
+    if A.finalStates[i] = stateName then
+    begin
+      IsStateFinal := True;
+      Exit;
+    end;
+end;
+
+// ------------------------------------------------------------
+// Verifica se uma string já existe num array (evita duplicação)
+// ------------------------------------------------------------
+function StringExistsInArray(const list: array of String; const count: Integer; const value: String): Boolean;
+var
+  i: Integer;
+begin
+  StringExistsInArray := False;
+  for i := 0 to count - 1 do
+    if list[i] = value then
+    begin
+      StringExistsInArray := True;
+      Exit;
+    end;
+end;
+
+// ------------------------------------------------------------
+// Procedimento Principal
 // ------------------------------------------------------------
 procedure ConvertAFNEToAFN(var A: TAutomaton);
 var
-  i, j, sIdx: Integer;
-  closure: array of boolean;
-  newTransitions: array of TTransition;
-  newCount: Integer;
-  origin, target: AnsiString;
+  // Iteradores
+  i, j, k, x, sIdx: Integer;
+  
+  // Buffers Estáticos (Substituindo arrays dinâmicos)
+  originClosure: array[0..MAX_STATES] of Boolean;
+  targetClosure: array[0..MAX_STATES] of Boolean;
+  
+  tempTransitions: array[0..MAX_TRANSITIONS] of TTransition;
+  tempTransCount: Integer;
+  
+  tempFinals: array[0..MAX_FINAL_STATES] of String;
+  tempFinalCount: Integer;
+
+  // Variáveis auxiliares
+  originState, intermediateState, finalTargetState: String;
+  isFinal, transitionExists: Boolean;
+
 begin
   writeln('>> Convertendo automato AFN-E para AFN...');
 
-  // --------------------------------------------------------
-  // Step 1: Build epsilon-closures
-  // --------------------------------------------------------
-  SetLength(closure, Length(A.states));
-  newCount := 0;
-  SetLength(newTransitions, 0);
+  // Inicialização de contadores temporários
+  tempTransCount := 0;
+  tempFinalCount := 0;
 
-  // --------------------------------------------------------
-  // Step 2: For each state, compute closure and generate transitions
-  // --------------------------------------------------------
-  for sIdx := 0 to High(A.states) do
+  // ========================================================
+  // Loop Principal: Para cada estado do autômato (origem)
+  // ========================================================
+  for sIdx := 0 to A.countStates - 1 do
   begin
-    // Reset closure
-    for i := 0 to High(closure) do
-      closure[i] := False;
+    originState := A.states[sIdx];
 
-    // Compute epsilon-closure of A.states[sIdx]
-    ComputeEpsilonClosure(A.states[sIdx], A, closure);
+    // 1. Calcular Epsilon-Fecho da Origem
+    // Limpa array de closure
+    for i := 0 to MAX_STATES do originClosure[i] := False;
+    ComputeEpsilonClosure(originState, A, originClosure);
 
-    // For every state reachable in closure
-    for i := 0 to High(A.states) do
+    // ========================================================
+    // Passo 2: Gerar Novas Transições
+    // Lógica: q --(ε*)--> p --(a)--> r --(ε*)--> s  ===>  q --(a)--> s
+    // ========================================================
+    
+    // Varre todos os estados 'p' (intermediate)
+    for i := 0 to A.countStates - 1 do
     begin
-      if not closure[i] then
-        Continue;
+      // Se 'p' não está no fecho de 'q', ignora
+      if not originClosure[i] then Continue;
+      
+      intermediateState := A.states[i]; 
 
-      origin := A.states[sIdx];
-
-      // For every non-ε transition from closure state
-      for j := 0 to High(A.transitions) do
+      // Buscar transições REAIS (não-epsilon) saindo de 'p'
+      for j := 0 to A.countTransitions - 1 do
       begin
-        if (A.transitions[j].source = A.states[i]) and (A.transitions[j].symbol <> 'ε') then
+        if (A.transitions[j].source = intermediateState) and (A.transitions[j].symbol <> 'ε') then
         begin
-          target := A.transitions[j].target;
+          // Temos: p --a--> r (r = target original)
+          // Agora calculamos o fecho de 'r' para achar os 's' finais
+          
+          for k := 0 to MAX_STATES do targetClosure[k] := False;
+          ComputeEpsilonClosure(A.transitions[j].target, A, targetClosure);
 
-          // Add new transition
-          SetLength(newTransitions, newCount + 1);
-          newTransitions[newCount].source := origin;
-          newTransitions[newCount].symbol := A.transitions[j].symbol;
-          newTransitions[newCount].target := target;
-          Inc(newCount);
+          // Criar transições de 'originState' para todos os 's' (finalTargetState)
+          for k := 0 to A.countStates - 1 do
+          begin
+            // Se estado k está no fecho do destino
+            if targetClosure[k] then
+            begin
+              finalTargetState := A.states[k];
+              
+              // Verifica duplicidade antes de adicionar
+              transitionExists := False;
+              for x := 0 to tempTransCount - 1 do
+              begin
+                 if (tempTransitions[x].source = originState) and
+                    (tempTransitions[x].symbol = A.transitions[j].symbol) and
+                    (tempTransitions[x].target = finalTargetState) then
+                 begin
+                   transitionExists := True;
+                   Break;
+                 end;
+              end;
+
+              if not transitionExists then
+              begin
+                 if tempTransCount >= MAX_TRANSITIONS then
+                 begin
+                   writeln('ERRO: Limite de transicoes excedido na conversao AFN.');
+                   Break;
+                 end;
+
+                 tempTransitions[tempTransCount].source := originState;
+                 tempTransitions[tempTransCount].symbol := A.transitions[j].symbol;
+                 tempTransitions[tempTransCount].target := finalTargetState;
+                 Inc(tempTransCount);
+              end;
+            end;
+          end;
         end;
       end;
     end;
-  end;
 
-  // --------------------------------------------------------
-  // Step 3: Update final states
-  // Any state whose closure contains a final state must be final
-  // --------------------------------------------------------
-  for sIdx := 0 to High(A.states) do
-  begin
-    for i := 0 to High(closure) do
-      closure[i] := False;
-
-    ComputeEpsilonClosure(A.states[sIdx], A, closure);
-
-    for i := 0 to High(A.states) do
-      if closure[i] then
-        if (A.states[i] = '') then Continue;
-
-    for i := 0 to High(A.states) do
+    // ========================================================
+    // Passo 3: Recalcular Estados Finais
+    // Se o fecho de 'q' alcança um final original, 'q' vira final
+    // ========================================================
+    isFinal := False;
+    for i := 0 to A.countStates - 1 do
     begin
-      if closure[i] then
+      if originClosure[i] and IsStateFinal(A, A.states[i]) then
       begin
-        // If closure contains a final state -> mark state as final
-        for j := 0 to High(A.finalStates) do
-          if A.finalStates[j] = A.states[i] then
-          begin
-            SetLength(A.finalStates, Length(A.finalStates) + 1);
-            A.finalStates[High(A.finalStates)] := A.states[sIdx];
-            Break;
-          end;
+        isFinal := True;
+        Break;
+      end;
+    end;
+
+    if isFinal and not StringExistsInArray(tempFinals, tempFinalCount, originState) then
+    begin
+      if tempFinalCount < MAX_FINAL_STATES then
+      begin
+        tempFinals[tempFinalCount] := originState;
+        Inc(tempFinalCount);
       end;
     end;
   end;
 
-  // --------------------------------------------------------
-  // Replace transitions
-  // --------------------------------------------------------
-  A.transitions := newTransitions;
+  // ========================================================
+  // Passo 4: Aplicar alterações no Objeto Principal (Cópia de volta)
+  // ========================================================
+  
+  // 4.1 Substituir Transições
+  A.countTransitions := tempTransCount;
+  for i := 0 to tempTransCount - 1 do
+    A.transitions[i] := tempTransitions[i];
 
-  // Update classification
-  A.classification := 'AFN';
+  // 4.2 Substituir Estados Finais
+  A.countFinal := tempFinalCount;
+  for i := 0 to tempFinalCount - 1 do
+    A.finalStates[i] := tempFinals[i];
+
+  // 4.3 Reclassificar
+  ClassifyAutomaton(A);
 
   writeln('>> Conversao AFN-E para AFN executada com sucesso!');
-  SaveAutomatonJSON('./data/output/AFN.json', A);
+  
+  SaveAutomatonJSON('./data/output/AFN_converted.json', A);
 end;
 
 end.
