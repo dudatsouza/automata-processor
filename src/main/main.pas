@@ -350,6 +350,7 @@ begin
 
             data := ReadJSON(path);
             AutomatonObj := ConvertTAutomatonData(data);
+            StandardizeTransitions(AutomatonObj);
             ClassifyAutomaton(AutomatonObj);
 
             writeln;

@@ -173,7 +173,6 @@ begin
   end;
 end;
 
-
 // Escrita no JSON
 procedure SaveAutomatonJSON(const FilePath: string; const A: TAutomaton);
 var

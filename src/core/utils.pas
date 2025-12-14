@@ -9,6 +9,7 @@ var
   AutomatonObj: TAutomaton; // Criando nosso automoto global
 
 procedure ClassifyAutomaton(var A: TAutomaton);
+procedure StandardizeTransitions(var A: TAutomaton);
 function ContainsEpsilon(var A: TAutomaton): Boolean;
 function IsDeterministic(var A: TAutomaton): Boolean;
 function IsMinimizedAFD(var A: TAutomaton): Boolean;
@@ -16,7 +17,33 @@ procedure ShowAutomatonDetails(var A: TAutomaton);
 
 implementation
 
-// Verificação de vazio (ε, λ, '')
+// Função de padronização de transições vazias para o símbolo ''
+procedure StandardizeTransitions(var A: TAutomaton);
+var
+  i: Integer;
+begin
+  for i := 0 to A.countTransitions - 1 do
+  begin 
+    // Verifica:
+    // 1. Lambda (λ)
+    // 2. String vazia ('')
+    // 3. O "lixo" de encoding (Îµ)
+    // 4. O próprio Epsilon, caso o compilador acerte (útil manter)
+    if (A.transitions[i].symbol = 'λ') or 
+      (A.transitions[i].symbol = 'ε') or
+      (A.transitions[i].symbol = 'Îµ') or  
+      (A.transitions[i].symbol = #$CE#$B5) or 
+      (A.transitions[i].symbol = #$CE#$BB) or
+      (A.transitions[i].symbol = '?') then
+    begin
+      A.transitions[i].symbol := '';
+    end;
+
+  end;
+end;
+
+
+// Verificação de vazio 
 function ContainsEpsilon(var A: TAutomaton): Boolean;
 var
   i: Integer;
@@ -25,10 +52,8 @@ begin
   
   for i := 0 to A.countTransitions - 1 do
   begin
-    // Verifica Epsilon ('ε'), String Vazia (''), ou Lambda ('λ')
-    if (A.transitions[i].symbol = 'ε') or 
-       (A.transitions[i].symbol = '') or 
-       (A.transitions[i].symbol = 'λ') then
+    // Verifica Epsilon - Vazio
+    if (A.transitions[i].symbol = '') then
     begin
       ContainsEpsilon := True;
       Exit;
@@ -51,10 +76,8 @@ begin
   // Percorre todas as transições para validar regras de AFD
   for i := 0 to A.countTransitions - 1 do
   begin
-    // Confirmar q não tem vazio (ε, λ, '')
-    if (A.transitions[i].symbol = 'ε') or 
-       (A.transitions[i].symbol = '') or 
-       (A.transitions[i].symbol = 'λ') then
+    // Confirmar q não tem vazio 
+    if (A.transitions[i].symbol = '') then
     begin
       IsDeterministic := False;
       Exit;
@@ -467,7 +490,7 @@ begin
     Exit;
   end;
 
-  // Verificar se tem vazio (ε, λ, '')
+  // Verificar se tem vazio 
   if ContainsEpsilon(A) then
   begin
     A.classification := 'AFN-E';

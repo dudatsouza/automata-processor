@@ -6,11 +6,9 @@
  
 [![Pascal][pascal-badge]][pascal-url]
 [![Build][make-badge]][make-url]
-
 [![Linux][linux-badge]][Linux-url]
 [![Windows][windows-badge]][windows-url]
 [![macOS][macos-badge]][macos-url]
-
 
 
 <b>
@@ -339,7 +337,7 @@ Esse método é canônico na literatura e corresponde ao procedimento clássico 
 
 #### **Identificação e remoção de Estados Inalcançáveis**
 
-A procedure [`RemoveUnreachableStates`](https://www.google.com/search?q=src/core/utils.pas) realiza uma **limpeza estrutural** (sanitização) no autômato. Utilizando o algoritmo de **Busca em Largura (BFS)** a partir do(s) estado(s) inicial(is), o sistema:
+A procedure [`RemoveUnreachableStates`](src/core/utils.pas#L338) realiza uma **limpeza estrutural** (sanitização) no autômato. Utilizando o algoritmo de **Busca em Largura (BFS)** a partir do(s) estado(s) inicial(is), o sistema:
 
 1.  Mapeia todos os estados acessíveis através de caminhos válidos (grafo conexo);
 2.  Identifica estados isolados ("código morto") que nunca seriam utilizados no processamento de cadeias;
@@ -349,7 +347,7 @@ Essa etapa é pré-requisito para a verificação de minimalidade, garantindo qu
 
 #### Classificação do autômato
 
-A função [`ClassifyAutomaton`](https://www.google.com/search?q=src/core/utils.pas%23L338) orquestra a análise do autômato. Antes de verificar os tipos, ela **executa automaticamente a remoção de estados inalcançáveis**, garantindo a integridade da estrutura. Em seguida, determina a classificação na hierarquia:
+A função [`ClassifyAutomaton`](src/core/utils.pas#L457) orquestra a análise do autômato. Antes de verificar os tipos, ela **executa automaticamente a remoção de estados inalcançáveis**, garantindo a integridade da estrutura. Em seguida, determina a classificação na hierarquia:
 
 1.  multi-inicial;
 2.  AFN-ε;

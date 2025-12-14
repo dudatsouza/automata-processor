@@ -9,11 +9,12 @@ procedure ConvertAFNEToAFN(var A: TAutomaton);
 
 implementation
 
+// Função encontra os estados q sao possiveis ser alcancados por transicoes vazias
 procedure ComputeEpsilonClosure(const state: String; const A: TAutomaton; var closure: array of boolean);
 var
   i, sIndex: Integer;
 begin
-  // 1. Achar índice do estado na lista principal
+  // Encontra o indice do estado
   sIndex := -1;
   for i := 0 to A.countStates - 1 do
     if A.states[i] = state then
@@ -28,15 +29,16 @@ begin
 
   closure[sIndex] := True; // Marca como parte do fecho
 
-  // 2. DFS recursiva para achar transições epsilon
+  // Busca de transicoes vazias, usamos aqui DFS recusivo
   for i := 0 to A.countTransitions - 1 do
   begin
     // Procura transições saindo deste estado com simbolo epsilon
-    if (A.transitions[i].source = state) and (A.transitions[i].symbol = 'ε') then
+    if (A.transitions[i].source = state) and (A.transitions[i].symbol = '') then
       ComputeEpsilonClosure(A.transitions[i].target, A, closure);
   end;
 end;
 
+// Função para identificar se é um estadp final
 function IsStateFinal(const A: TAutomaton; stateName: String): Boolean;
 var
   i: Integer;
@@ -50,6 +52,7 @@ begin
     end;
 end;
 
+// FUnção conferir se um termo existe em uma lista
 function StringExistsInArray(const list: array of String; const count: Integer; const value: String): Boolean;
 var
   i: Integer;
@@ -63,12 +66,13 @@ begin
     end;
 end;
 
+// Função de Converter AFN-E para AFN
 procedure ConvertAFNEToAFN(var A: TAutomaton);
 var
   // Iteradores
   i, j, k, x, sIdx: Integer;
   
-  // Buffers Estáticos (Substituindo arrays dinâmicos)
+  // Arrays estáticos
   originClosure: array[0..MAX_STATES] of Boolean;
   targetClosure: array[0..MAX_STATES] of Boolean;
   
@@ -89,39 +93,17 @@ begin
   tempTransCount := 0;
   tempFinalCount := 0;
 
-  // ========================================================
-  // Loop Principal: Para cada estado do autômato (origem)
-  // ========================================================
+  // Analise de cada estado do automato 
   for sIdx := 0 to A.countStates - 1 do
   begin
     originState := A.states[sIdx];
 
-    // 1. Limpar o array de fecho (Lógica SEGURA do HEAD)
-    // Usamos MAX_STATES para garantir que não sobra lixo de memória
+    // limpa o array
     for i := 0 to MAX_STATES do originClosure[i] := False;
 
-    // 2. Calcular o Epsilon Fecho
+    // calcula o fecho
     ComputeEpsilonClosure(originState, A, originClosure);
 
-    // 3. Debug / Prints (Funcionalidade da Feature ADAPTADA)
-    // Agora está ativo e usando os contadores corretos (countStates)
-    writeln('Imprimindo E-fechos encontrados...');
-    write('e-fecho(', originState, ') = { ');
-
-    for i := 0 to A.countStates - 1 do
-    begin
-      // Verifica se o índice 'i' está marcado como True no array estático
-      if originClosure[i] then
-        write(A.states[i], ' ');
-    end;
-    writeln('}');
-    writeln;
-
-    // ========================================================
-    // Passo 2: Gerar Novas Transições
-    // Lógica: q --(ε*)--> p --(a)--> r --(ε*)--> s  ===>  q --(a)--> s
-    // ========================================================
-    
     // Varre todos os estados 'p' (intermediate)
     for i := 0 to A.countStates - 1 do
     begin
@@ -133,7 +115,7 @@ begin
       // Buscar transições REAIS (não-epsilon) saindo de 'p'
       for j := 0 to A.countTransitions - 1 do
       begin
-        if (A.transitions[j].source = intermediateState) and (A.transitions[j].symbol <> 'ε') then
+        if (A.transitions[j].source = intermediateState) and (A.transitions[j].symbol <> '') then
         begin
           // Temos: p --a--> r (r = target original)
           // Agora calculamos o fecho de 'r' para achar os 's' finais
