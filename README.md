@@ -6,7 +6,8 @@
  
 [![Pascal][pascal-badge]][pascal-url]
 [![Build][make-badge]][make-url]
-[![Ubuntu][ubuntu-badge]][Ubuntu-url]
+
+[![Linux][linux-badge]][Linux-url]
 [![Windows][windows-badge]][windows-url]
 [![macOS][macos-badge]][macos-url]
 
@@ -83,11 +84,17 @@ src/
   </summary> 
 
 
-###
+### 
 <details> 
   <summary>
-    <b style='font-size: 16px'> 📌 main.pas </b>
+    <b style='font-size: 18px'> 📂 Main </b>
   </summary> 
+
+### 📌 main.pas
+<!-- <details> 
+  <summary>
+    <b style='font-size: 16px'> 📌 main.pas </b>
+  </summary>  -->
 
 Este módulo implementa o **controle do fluxo principal do programa**, sendo responsável pela interação com o usuário e pela orquestração das conversões entre diferentes tipos de autômatos.
 
@@ -138,6 +145,12 @@ O fluxo geral do programa segue os seguintes passos:
 Esse encadeamento reflete diretamente as equivalências formais demonstradas na teoria de autômatos.
 
 </details>
+
+### 
+<details> 
+  <summary>
+    <b style='font-size: 18px'> 📂 Core </b>
+  </summary> 
 
 ###
 <details> 
@@ -324,22 +337,44 @@ Esse método é canônico na literatura e corresponde ao procedimento clássico 
 
 > Observação: o algoritmo considera AFDs possivelmente incompletos, ou seja, sem estado poço explícito.
 
+#### **Identificação e remoção de Estados Inalcançáveis**
+
+A procedure [`RemoveUnreachableStates`](https://www.google.com/search?q=src/core/utils.pas) realiza uma **limpeza estrutural** (sanitização) no autômato. Utilizando o algoritmo de **Busca em Largura (BFS)** a partir do(s) estado(s) inicial(is), o sistema:
+
+1.  Mapeia todos os estados acessíveis através de caminhos válidos (grafo conexo);
+2.  Identifica estados isolados ("código morto") que nunca seriam utilizados no processamento de cadeias;
+3.  **Remove fisicamente** esses estados e suas respectivas transições da estrutura de dados.
+
+Essa etapa é pré-requisito para a verificação de minimalidade, garantindo que o autômato não contenha "gordura" estrutural antes de ser processado.
 
 #### Classificação do autômato
 
-A função [`ClassifyAutomaton`](src/core/utils.pas#L338) determina o tipo do autômato seguindo a hierarquia:
+A função [`ClassifyAutomaton`](https://www.google.com/search?q=src/core/utils.pas%23L338) orquestra a análise do autômato. Antes de verificar os tipos, ela **executa automaticamente a remoção de estados inalcançáveis**, garantindo a integridade da estrutura. Em seguida, determina a classificação na hierarquia:
 
-1. multi-inicial;
-2. AFN-ε;
-3. AFD ou AFD mínimo;
-4. AFN.
+1.  multi-inicial;
+2.  AFN-ε;
+3.  AFD ou AFD mínimo;
+4.  AFN.
+
+Essa classificação reflete diretamente as **relações de generalização e conversão** estudadas na teoria de autômatos.
+
 
 Essa classificação reflete diretamente as **relações de generalização e conversão** estudadas na teoria de autômatos.
 
 #### Mostrar Autômato Atual
 A função [`ShowAutomatonDetails`](src/core/utils.pas#L290) é uma função auxiliar do projeto para mostrar ao usuário o autômato atual.
 
+
 </details>
+
+</details>
+
+
+### 
+<details> 
+  <summary>
+    <b style='font-size: 18px'> 📂 Conversions </b>
+  </summary> 
 
 
 ###
@@ -437,6 +472,16 @@ Esses cuidados garantem a integridade estrutural do autômato ao longo de todo o
 </details>
 
 
+
+</details>
+
+
+### 
+<details> 
+  <summary>
+    <b style='font-size: 18px'> 📂 Test </b>
+  </summary> 
+
 ###
 <details> 
   <summary>
@@ -450,6 +495,8 @@ Esses cuidados garantem a integridade estrutural do autômato ao longo de todo o
 
 </details>
 
+
+</details>
 
 
 
@@ -657,7 +704,7 @@ Trabalho desenvolvido pelos seguintes alunos:
 [linkedin-duda]: https://www.linkedin.com/in/dudatsouza/
 
 
-[pascal-badge]: https://img.shields.io/badge/Pascal-FreePascal-red?style=for-the-badge
+[pascal-badge]: https://img.shields.io/badge/pascal-376aa8.svg?style=for-the-badge&logo=javafx&logoColor=white
 [pascal-url]: https://www.freepascal.org/
 
 [vscode-badge]: https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white
@@ -666,11 +713,11 @@ Trabalho desenvolvido pelos seguintes alunos:
 [make-badge]: https://img.shields.io/badge/_-MAKEFILE-427819.svg?style=for-the-badge
 [make-url]: https://www.gnu.org/software/make/manual/make.html
 
-[ubuntu-badge]: https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white
-[Ubuntu-url]: https://ubuntu.com/
+[linux-badge]: https://img.shields.io/badge/Linux-E34F26?logo=linux&logoColor=black&style=for-the-badge
+[Linux-url]: https://www.kernel.org/
 
 [windows-badge]: https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white
-[windows-url]: https://www.microsoft.com/windows/
+[Windows-url]:  https://www.microsoft.com/windows
 
 [macos-badge]: https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white
 [macos-url]: https://www.apple.com/macos/

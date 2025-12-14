@@ -334,9 +334,132 @@ begin
   writeln;
 end;
 
+// Função de identificar e remover estados inalcançáveis
+procedure RemoveUnreachableStates(var A: TAutomaton);
+var
+  i, k: Integer;
+  Reachable: array[0..MAX_STATES] of Boolean;
+  Queue: array[0..MAX_STATES] of Integer;
+  qStart, qEnd, currIdx, targetIdx: Integer;
+  
+  // Variáveis para a reconstrução das listas (Compactação)
+  NewCount: Integer;
+  
+  // Função auxiliar local para pegar índice pelo nome
+  function GetIdx(name: String): Integer;
+  var r: Integer;
+  begin
+    GetIdx := -1;
+    for r := 0 to A.countStates - 1 do
+      if A.states[r] = name then
+      begin
+        GetIdx := r;
+        Exit;
+      end;
+  end;
+
+begin
+  // Identificar estado inalcancavel (bfs)
+  
+  // Inicializa tudo como falso
+  for i := 0 to A.countStates - 1 do Reachable[i] := False;
+
+  qStart := 0; 
+  qEnd := 0;
+
+  // Adiciona estado(s) inicial(is) na fila
+  // Se não houver estado inicial, nada é alcançável.
+  for i := 0 to A.countInitial - 1 do
+  begin
+    currIdx := GetIdx(A.initialState[i]);
+    if currIdx <> -1 then
+    begin
+      if not Reachable[currIdx] then
+      begin
+        Reachable[currIdx] := True;
+        Queue[qEnd] := currIdx;
+        Inc(qEnd);
+      end;
+    end;
+  end;
+
+  // Loop da Busca em Largura
+  while qStart < qEnd do
+  begin
+    currIdx := Queue[qStart];
+    Inc(qStart);
+
+    // Varre transições partindo de currIdx
+    for i := 0 to A.countTransitions - 1 do
+    begin
+      if A.transitions[i].source = A.states[currIdx] then
+      begin
+        targetIdx := GetIdx(A.transitions[i].target);
+        // Se achou um vizinho novo, marca e põe na fila
+        if (targetIdx <> -1) and (not Reachable[targetIdx]) then
+        begin
+          Reachable[targetIdx] := True;
+          Queue[qEnd] := targetIdx;
+          Inc(qEnd);
+        end;
+      end;
+    end;
+  end;
+
+  // Se o número de alcançáveis for igual ao total, não precisa fazer nada
+  if qEnd = A.countStates then Exit;
+
+  // Remover essas transiçoesn "mortas"
+  // Mantemos apenas transições onde a ORIGEM é um estado alcançável.
+  // (Se a origem é inalcançável, a transição é inútil).
+  
+  NewCount := 0;
+  for i := 0 to A.countTransitions - 1 do
+  begin
+    currIdx := GetIdx(A.transitions[i].source);
+    // Se o estado de origem for alcançável (Reachable[currIdx]), mantemos a transição
+    if (currIdx <> -1) and (Reachable[currIdx]) then
+    begin
+      A.transitions[NewCount] := A.transitions[i];
+      Inc(NewCount);
+    end;
+  end;
+  A.countTransitions := NewCount; // Atualiza total de transições
+
+  // remover estados finais inalcancaveis
+  NewCount := 0;
+  for i := 0 to A.countFinal - 1 do
+  begin
+    currIdx := GetIdx(A.finalStates[i]);
+    if (currIdx <> -1) and (Reachable[currIdx]) then
+    begin
+      A.finalStates[NewCount] := A.finalStates[i];
+      Inc(NewCount);
+    end;
+  end;
+  A.countFinal := NewCount;
+
+  // remover estados inalcancaveis
+  NewCount := 0;
+  for i := 0 to A.countStates - 1 do
+  begin
+    if Reachable[i] then
+    begin
+      A.states[NewCount] := A.states[i];
+      Inc(NewCount);
+    end;
+  end;
+  A.countStates := NewCount; // Atualiza total de estados
+end;
+
+
 // Classificação do Autômato
 procedure ClassifyAutomaton(var A: TAutomaton);
 begin
+
+  // Verificar se tem estado inalcançável, e removê-lo
+  RemoveUnreachableStates(A);
+
   // Verificar se tem mais de um estado inicial
   if A.countInitial > 1 then
   begin
