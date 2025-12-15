@@ -484,8 +484,6 @@ A função [`ClassifyAutomaton`](src/core/utils.pas#L457) orquestra a análise d
 Essa classificação reflete diretamente as **relações de generalização e conversão** estudadas na teoria de autômatos.
 
 
-Essa classificação reflete diretamente as **relações de generalização e conversão** estudadas na teoria de autômatos.
-
 #### Mostrar Autômato Atual
 A função [`ShowAutomatonDetails`](src/core/utils.pas#L290) é uma função auxiliar do projeto para mostrar ao usuário o autômato atual.
 
