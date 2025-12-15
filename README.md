@@ -14,6 +14,7 @@
 <b>
   Maria Eduarda Teixeira Souza<br>
   João Francisco Teles da Silva<br>
+  Arthur Santana de Mesquita <br>
 </b>
   
 <br>
@@ -1042,6 +1043,13 @@ Trabalho desenvolvido pelos seguintes alunos:
 *Graduando - 6º Período de Engenharia de Computação @ CEFET-MG* <br>  
 [![Gmail][gmail-badge]][gmail-joao]
 
+<br>
+
+
+**Arthur Santana de Mesquita**  
+*Graduando - 8º Período de Engenharia de Computação @ CEFET-MG* <br>  
+[![Linkedin][linkedin-badge]][linkedin-arthur]
+
 </div>
 
 </details>
@@ -1104,7 +1112,7 @@ Trabalho desenvolvido pelos seguintes alunos:
 [linkedin-badge]: https://img.shields.io/badge/-LinkedIn-0077B5?style=for-the-badge&logo=Linkedin&logoColor=white
 [telegram-badge]: https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white
 
-
+[linkedin-arthur]: https://www.linkedin.com/in/arthur-s-m/
 [gmail-joao]: mailto:joaoteles0505@gmail.com
 
 [gmail-duda]: mailto:dudateixeirasouza@gmail.com
